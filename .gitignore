@@ -33,3 +33,8 @@ core
 .github/
 
 .vercel
+
+# Environment variables
+.env
+.env.*
+!.env.example
