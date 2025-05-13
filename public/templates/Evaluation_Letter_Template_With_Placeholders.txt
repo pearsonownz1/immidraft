@@ -1,0 +1,75 @@
+[LETTERHEAD]
+
+EDUCATIONAL EVALUATION REPORT
+
+Date: {{CURRENT_DATE}}
+
+RE: Evaluation of Academic Credentials for {{CLIENTNAME}}
+
+To Whom It May Concern:
+
+This evaluation report represents an analysis of the academic credentials earned by {{CLIENTNAME}} at {{UNIVERSITY}} in {{COUNTRY}}. The purpose of this evaluation is to determine the U.S. educational equivalency of these credentials.
+
+SUMMARY OF FINDINGS:
+
+Based on a thorough review of the academic documents provided, it is my professional opinion that {{CLIENTNAME}}'s {{BACHELOR_DEGREE}} degree earned from {{UNIVERSITY}} in {{DEGREE_DATE1}} is equivalent to a {{US_EQUIVALENT_DEGREE1}} from a regionally accredited institution in the United States.
+
+{{#ADDITIONAL_DEGREE}}
+Additionally, {{CLIENTNAME}}'s {{ADDITIONAL_DEGREE}} degree earned from {{UNIVERSITY2}} in {{DEGREE_DATE2}} is equivalent to a {{US_EQUIVALENT_DEGREE2}} from a regionally accredited institution in the United States.
+{{/ADDITIONAL_DEGREE}}
+
+ACADEMIC HISTORY:
+
+Institution: {{UNIVERSITY}}
+Location: {{UNIVERSITY_LOCATION}}
+Degree: {{BACHELOR_DEGREE}}
+Field of Study: {{FIELD_OF_STUDY}}
+Date of Award: {{DEGREE_DATE1}}
+Program Length: {{PROGRAM_LENGTH1}}
+
+{{#ADDITIONAL_DEGREE}}
+Institution: {{UNIVERSITY2}}
+Location: {{UNIVERSITY2_LOCATION}}
+Degree: {{ADDITIONAL_DEGREE}}
+Field of Study: {{FIELD_OF_STUDY2}}
+Date of Award: {{DEGREE_DATE2}}
+Program Length: {{PROGRAM_LENGTH2}}
+{{/ADDITIONAL_DEGREE}}
+
+PROFESSIONAL EXPERIENCE:
+
+{{CLIENTNAME}} has {{YEARS}} years of professional experience in the field of {{SPECIALTY}}. Their work experience includes:
+
+{{#WORK_EXPERIENCE_SUMMARY}}
+• {{.}}
+{{/WORK_EXPERIENCE_SUMMARY}}
+
+BASIS OF EVALUATION:
+
+This evaluation is based on official academic records provided by the applicant, including diplomas, transcripts, and supporting documentation. The evaluation follows standards and guidelines established by the National Association of Credential Evaluation Services (NACES) and the American Association of Collegiate Registrars and Admissions Officers (AACRAO).
+
+The evaluation considers the following factors:
+- Recognition and accreditation status of the institution
+- Admission requirements
+- Program length and structure
+- Course content and academic rigor
+- Grading system
+- Graduation requirements
+
+INSTITUTIONAL RECOGNITION:
+
+{{UNIVERSITY}} is officially recognized by the {{ACCREDITATION_BODY}} and is authorized to award degrees at the {{DEGREE_LEVEL}} level.
+
+RECOMMENDATION:
+
+Based on the evaluation of the academic credentials presented, I recommend that {{CLIENTNAME}}'s educational qualifications be recognized as equivalent to a {{US_EQUIVALENT_DEGREE1}} from a regionally accredited institution in the United States.
+
+Sincerely,
+
+Guy Pearson
+Senior Evaluator
+ImmiDraft Educational Evaluation Services
+
+[SIGNATURE]
+
+DISCLAIMER: This evaluation is advisory in nature and represents the opinion of the evaluator. Acceptance of this evaluation is at the discretion of the receiving institution or organization.

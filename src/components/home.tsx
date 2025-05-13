@@ -1,4 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getAllCases } from "@/services/caseService";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppLayout } from "./AppLayout";
+import type { Database } from "@/types/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -7,11 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Home as HomeIcon,
   FileText,
-  Users,
-  Settings,
-  PlusCircle,
   Search,
   Bell,
   ChevronDown,
@@ -25,46 +32,71 @@ import {
   Lightbulb,
   Plane,
   Globe,
+  Menu,
+  PlusCircle,
 } from "lucide-react";
-import CaseBuilder from "./CaseBuilder";
-import VisaTypeSelectionModal from "./VisaTypeSelectionModal";
+import CaseWorkspace from "./CaseWorkspace";
 
-const HomePage = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
-  const [isVisaTypeModalOpen, setIsVisaTypeModalOpen] = useState(false);
+interface HomePageProps {
+  activeTab?: string;
+}
 
-  // Mock data for recent cases
-  const recentCases = [
-    {
-      id: "1",
-      name: "John Smith",
-      type: "O-1A",
-      status: "In Progress",
-      updated: "2 hours ago",
-    },
-    {
-      id: "2",
-      name: "Maria Rodriguez",
-      type: "EB-1A",
-      status: "Draft",
-      updated: "1 day ago",
-    },
-    {
-      id: "3",
-      name: "Wei Chen",
-      type: "H-1B",
-      status: "Review",
-      updated: "3 days ago",
-    },
-    {
-      id: "4",
-      name: "Priya Patel",
-      type: "L-1A",
-      status: "Complete",
-      updated: "1 week ago",
-    },
-  ];
+const HomePage = ({ activeTab: initialActiveTab }: HomePageProps = {}) => {
+  const [activeTab, setActiveTab] = useState(initialActiveTab || "dashboard");
+  const [isLoading, setIsLoading] = useState(false);
+  const [cases, setCases] = useState<Database['public']['Tables']['cases']['Row'][]>([]);
+
+  // Fetch cases from Supabase when component mounts
+  useEffect(() => {
+    const fetchCases = async () => {
+      setIsLoading(true);
+      try {
+        const fetchedCases = await getAllCases();
+        setCases(fetchedCases);
+      } catch (error) {
+        console.error('Error fetching cases:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCases();
+  }, []);
+
+  // Format cases for display
+  const recentCases = cases.slice(0, 5).map(caseItem => {
+    // Format the updated_at date to a relative time string
+    const updatedDate = new Date(caseItem.updated_at);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - updatedDate.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    let updated = '';
+    if (diffDays === 0) {
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      if (diffHours === 0) {
+        const diffMinutes = Math.floor(diffTime / (1000 * 60));
+        updated = `${diffMinutes} minutes ago`;
+      } else {
+        updated = `${diffHours} hours ago`;
+      }
+    } else if (diffDays === 1) {
+      updated = '1 day ago';
+    } else {
+      updated = `${diffDays} days ago`;
+    }
+    
+    return {
+      id: caseItem.id,
+      name: `${caseItem.client_first_name} ${caseItem.client_last_name}`,
+      type: caseItem.visa_type.toUpperCase(),
+      status: caseItem.status,
+      updated,
+    };
+  });
+
+  // Use only real data from the database, no mock data
+  const displayCases = recentCases;
 
   // Mock data for visa categories
   const visaCategories = [
@@ -134,79 +166,31 @@ const HomePage = () => {
     },
   ];
 
+  const navigate = useNavigate();
+  
   const handleOpenCase = (caseId: string) => {
-    setActiveTab("case-builder");
-    setActiveCaseId(caseId);
+    // Navigate to the case workspace page
+    navigate(`/case/${caseId}`);
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="w-64 border-r bg-card p-4 flex flex-col">
-        <div className="flex items-center mb-8">
-          <div className="bg-primary rounded-md p-1 mr-2">
-            <FileText className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <h1 className="text-xl font-bold">GEO Credentials</h1>
-        </div>
-
-        <nav className="space-y-1">
-          <Button
-            variant={activeTab === "dashboard" ? "secondary" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => setActiveTab("dashboard")}
+    <div className="flex-1 overflow-auto bg-background">
+      {/* Header */}
+      <header className="h-16 border-b flex items-center justify-between px-6 bg-white">
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="mr-2 md:hidden"
+            onClick={() => {
+              // Use the context to toggle the mobile menu
+              const { toggleMobileMenu } = useAppLayout();
+              toggleMobileMenu();
+            }}
           >
-            <HomeIcon className="mr-2 h-4 w-4" />
-            Dashboard
+            <Menu className="h-5 w-5" />
           </Button>
-          <Button
-            variant={activeTab === "cases" ? "secondary" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => setActiveTab("cases")}
-          >
-            <Folder className="mr-2 h-4 w-4" />
-            Cases
-          </Button>
-          <Button
-            variant={activeTab === "clients" ? "secondary" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => setActiveTab("clients")}
-          >
-            <Users className="mr-2 h-4 w-4" />
-            Clients
-          </Button>
-          <Button
-            variant={activeTab === "settings" ? "secondary" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => setActiveTab("settings")}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
-        </nav>
-
-        <div className="mt-auto pt-4">
-          <div className="flex items-center p-2 rounded-md bg-muted">
-            <Avatar className="h-8 w-8 mr-2">
-              <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin" />
-              <AvatarFallback>AD</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="text-sm font-medium">Admin User</p>
-              <p className="text-xs text-muted-foreground">
-                admin@geocredentials.com
-              </p>
-            </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 border-b flex items-center justify-between px-6">
-          <div className="flex items-center rounded-md bg-muted px-3 py-1 w-64">
+          <div className="flex items-center rounded-md bg-muted px-3 py-1 w-full md:w-64">
             <Search className="h-4 w-4 text-muted-foreground mr-2" />
             <input
               type="text"
@@ -214,162 +198,162 @@ const HomePage = () => {
               className="bg-transparent border-none focus:outline-none text-sm w-full"
             />
           </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4 mr-2" />
-              Notifications
-            </Button>
-            <Avatar>
-              <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin" />
-              <AvatarFallback>AD</AvatarFallback>
-            </Avatar>
+        </div>
+        <div className="flex items-center space-x-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="default" size="sm">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                New Project
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate('/letter-ai')}>
+                Expert Letter
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/translate-ai')}>
+                Certified Translation
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/evaluateai')}>
+                Credential Evaluation
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" size="sm">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+          </Button>
+          <Avatar>
+            <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=admin" />
+            <AvatarFallback>AD</AvatarFallback>
+          </Avatar>
+        </div>
+      </header>
+
+      {/* Content Area */}
+      <main className="p-6">
+        {activeTab === "dashboard" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-bold">Dashboard</h2>
+              {/* "New Case" button removed */}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Active Cases
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{cases.filter(c => c.status === 'In Progress').length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    From database
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Pending Review
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{cases.filter(c => c.status === 'Review').length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    From database
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Completed
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{cases.filter(c => c.status === 'Complete').length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    From database
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent AI Projects */}
+            <Card className="col-span-1">
+              <CardHeader>
+                <CardTitle>Recent AI Projects</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <table className="w-full caption-bottom text-sm">
+                    <thead className="border-b bg-muted/50">
+                      <tr className="m-0 p-0 even:bg-muted">
+                        <th className="h-10 px-4 text-left align-middle font-medium">Name</th>
+                        <th className="h-10 px-4 text-left align-middle font-medium">Date</th>
+                        <th className="h-10 px-4 text-left align-middle font-medium">Type</th>
+                        <th className="h-10 px-4 text-left align-middle font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Sample data - would be replaced with actual data from API */}
+                      <tr className="m-0 p-0 border-b">
+                        <td className="p-4 align-middle">John Smith EB-1A</td>
+                        <td className="p-4 align-middle">May 5, 2025</td>
+                        <td className="p-4 align-middle">
+                          <Badge>Expert Letter</Badge>
+                        </td>
+                        <td className="p-4 align-middle">
+                          <Button variant="outline" size="sm" onClick={() => navigate('/letter-ai')}>
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                      <tr className="m-0 p-0 border-b">
+                        <td className="p-4 align-middle">Maria Garcia Resume</td>
+                        <td className="p-4 align-middle">May 3, 2025</td>
+                        <td className="p-4 align-middle">
+                          <Badge>Translation</Badge>
+                        </td>
+                        <td className="p-4 align-middle">
+                          <Button variant="outline" size="sm" onClick={() => navigate('/translate-ai')}>
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                      <tr className="m-0 p-0 border-b">
+                        <td className="p-4 align-middle">Wei Zhang Diploma</td>
+                        <td className="p-4 align-middle">May 1, 2025</td>
+                        <td className="p-4 align-middle">
+                          <Badge>Evaluation</Badge>
+                        </td>
+                        <td className="p-4 align-middle">
+                          <Button variant="outline" size="sm" onClick={() => navigate('/evaluateai')}>
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Cases section removed */}
           </div>
-        </header>
+        )}
 
-        {/* Content Area */}
-        <main className="flex-1 overflow-auto p-6">
-          {activeTab === "dashboard" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold">Dashboard</h2>
-                <Button onClick={() => setIsVisaTypeModalOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Case
-                </Button>
-              </div>
+        {/* Case builder section removed */}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Active Cases
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">12</div>
-                    <p className="text-xs text-muted-foreground">
-                      +2 from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Pending Review
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">4</div>
-                    <p className="text-xs text-muted-foreground">
-                      -1 from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Completed
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">28</div>
-                    <p className="text-xs text-muted-foreground">
-                      +5 from last month
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+        {/* Cases tab content removed */}
 
-              <div className="grid grid-cols-1 gap-6">
-                <Card className="col-span-1">
-                  <CardHeader>
-                    <CardTitle>Recent Cases</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-[300px]">
-                      <div className="space-y-4">
-                        {recentCases.map((caseItem) => (
-                          <div
-                            key={caseItem.id}
-                            className="flex items-center justify-between p-3 border rounded-md hover:bg-accent cursor-pointer"
-                            onClick={() => handleOpenCase(caseItem.id)}
-                          >
-                            <div>
-                              <p className="font-medium">{caseItem.name}</p>
-                              <div className="flex items-center text-sm text-muted-foreground">
-                                <Badge variant="outline" className="mr-2">
-                                  {caseItem.type}
-                                </Badge>
-                                <Clock className="h-3 w-3 mr-1" />
-                                <span>{caseItem.updated}</span>
-                              </div>
-                            </div>
-                            <Badge
-                              variant={
-                                caseItem.status === "Complete"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                            >
-                              {caseItem.status}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
+        {/* Clients and Settings tab content removed */}
+      </main>
 
-          {activeTab === "case-builder" && activeCaseId && (
-            <CaseBuilder
-              visaTypeId={activeCaseId}
-              onClose={() => setActiveTab("dashboard")}
-            />
-          )}
-
-          {activeTab === "cases" && (
-            <div>
-              <h2 className="text-3xl font-bold mb-6">All Cases</h2>
-              <p className="text-muted-foreground">
-                Case management interface would be implemented here.
-              </p>
-            </div>
-          )}
-
-          {activeTab === "clients" && (
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Clients</h2>
-              <p className="text-muted-foreground">
-                Client management interface would be implemented here.
-              </p>
-            </div>
-          )}
-
-          {activeTab === "settings" && (
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Settings</h2>
-              <p className="text-muted-foreground">
-                Settings interface would be implemented here.
-              </p>
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* Visa Type Selection Modal */}
-      <VisaTypeSelectionModal
-        isOpen={isVisaTypeModalOpen}
-        onClose={() => setIsVisaTypeModalOpen(false)}
-        onSelectVisaType={(visaTypeId) => {
-          setIsVisaTypeModalOpen(false);
-          setActiveTab("case-builder");
-          setActiveCaseId(visaTypeId);
-        }}
-        visaTypes={visaCategories}
-      />
+      {/* Visa Type Selection Modal removed */}
     </div>
   );
 };

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Supabase Storage Bucket</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #3ecf8e;
+            border-bottom: 2px solid #3ecf8e;
+            padding-bottom: 10px;
+        }
+        .step {
+            background-color: #f9f9f9;
+            border-left: 4px solid #3ecf8e;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #3ecf8e;
+        }
+        code {
+            background-color: #f0f0f0;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .button {
+            display: inline-block;
+            background-color: #3ecf8e;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2eaf76;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Supabase Storage Bucket</h1>
+    
+    <div class="warning">
+        <h3>Error: Bucket Not Found</h3>
+        <p>The application is encountering a "Bucket not found" error because the required storage bucket named <code>documents</code> does not exist in your Supabase project.</p>
+    </div>
+
+    <h2>Why This Is Happening</h2>
+    <p>The error occurs because:</p>
+    <ol>
+        <li>The application tries to upload files to a Supabase storage bucket named <code>documents</code></li>
+        <li>This bucket doesn't exist in your Supabase project</li>
+        <li>The anonymous API key doesn't have permission to create buckets (due to Row Level Security policies)</li>
+    </ol>
+
+    <h2>How to Fix This</h2>
+    
+    <div class="step">
+        <h3>Step 1: Go to Supabase Dashboard</h3>
+        <p>Open your Supabase project dashboard:</p>
+        <a href="https://app.supabase.com/project/nhlvmzurgvkiltpzycyt" target="_blank" class="button">Open Supabase Dashboard</a>
+    </div>
+    
+    <div class="step">
+        <h3>Step 2: Navigate to Storage</h3>
+        <p>Click on "Storage" in the left sidebar of the Supabase dashboard.</p>
+    </div>
+    
+    <div class="step">
+        <h3>Step 3: Create New Bucket</h3>
+        <p>Click the "New Bucket" button and enter the following information:</p>
+        <ul>
+            <li><strong>Bucket name:</strong> <code>documents</code></li>
+            <li><strong>Public bucket:</strong> Checked (to make files publicly accessible)</li>
+        </ul>
+        <p>Then click "Create bucket".</p>
+    </div>
+    
+    <h2>Setting Up Access Policies</h2>
+    
+    <div class="step">
+        <h3>Step 4: Configure Bucket Policies</h3>
+        <p>After creating the bucket, click on it to view its details, then go to the "Policies" tab.</p>
+        <p>Create the following policies:</p>
+        
+        <table>
+            <tr>
+                <th>Policy Name</th>
+                <th>Allowed Operation</th>
+                <th>Target Roles</th>
+                <th>Policy Definition</th>
+            </tr>
+            <tr>
+                <td>Allow public read access</td>
+                <td>SELECT</td>
+                <td>anon, authenticated</td>
+                <td><code>true</code></td>
+            </tr>
+            <tr>
+                <td>Allow authenticated uploads</td>
+                <td>INSERT</td>
+                <td>authenticated</td>
+                <td><code>true</code></td>
+            </tr>
+            <tr>
+                <td>Allow users to update their files</td>
+                <td>UPDATE</td>
+                <td>authenticated</td>
+                <td><code>(auth.uid() = owner)</code></td>
+            </tr>
+            <tr>
+                <td>Allow users to delete their files</td>
+                <td>DELETE</td>
+                <td>authenticated</td>
+                <td><code>(auth.uid() = owner)</code></td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="success">
+        <h3>Verification</h3>
+        <p>After creating the bucket and setting up the policies, redeploy the application to Vercel and test the document upload functionality to ensure it's working correctly.</p>
+        <a href="https://vercel.com/guy-gcsorgs-projects/immidraft" target="_blank" class="button">Go to Vercel Dashboard</a>
+    </div>
+    
+    <script>
+        // Automatically open the Supabase dashboard when the page loads
+        window.onload = function() {
+            window.open('https://app.supabase.com/project/nhlvmzurgvkiltpzycyt/storage/buckets', '_blank');
+        };
+    </script>
+</body>
+</html>

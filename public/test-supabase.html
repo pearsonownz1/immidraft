@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Connection Test</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #2563eb;
+    }
+    .card {
+      background-color: #f9fafb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .success {
+      color: #059669;
+      font-weight: bold;
+    }
+    .error {
+      color: #dc2626;
+      font-weight: bold;
+    }
+    pre {
+      background-color: #f1f5f9;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    input {
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Supabase Connection Test</h1>
+  
+  <div class="card">
+    <h2>Configuration</h2>
+    <div class="form-group">
+      <label for="supabaseUrl">Supabase URL:</label>
+      <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co">
+    </div>
+    <div class="form-group">
+      <label for="supabaseKey">Supabase Anon Key:</label>
+      <input type="text" id="supabaseKey" placeholder="your-anon-key">
+    </div>
+    <button id="testConnection">Test Connection</button>
+  </div>
+  
+  <div class="card">
+    <h2>Results</h2>
+    <div id="results">
+      <p>Click "Test Connection" to begin the test.</p>
+    </div>
+  </div>
+  
+  <div class="card">
+    <h2>Test Case Data</h2>
+    <div id="caseData">
+      <p>No case data fetched yet.</p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Try to get values from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlSupabaseUrl = urlParams.get('url');
+      const urlSupabaseKey = urlParams.get('key');
+      
+      // Set input values if provided in URL
+      if (urlSupabaseUrl) document.getElementById('supabaseUrl').value = urlSupabaseUrl;
+      if (urlSupabaseKey) document.getElementById('supabaseKey').value = urlSupabaseKey;
+      
+      // Test connection button
+      document.getElementById('testConnection').addEventListener('click', async function() {
+        const resultsDiv = document.getElementById('results');
+        const caseDataDiv = document.getElementById('caseData');
+        
+        // Get values from inputs
+        const supabaseUrl = document.getElementById('supabaseUrl').value;
+        const supabaseKey = document.getElementById('supabaseKey').value;
+        
+        if (!supabaseUrl || !supabaseKey) {
+          resultsDiv.innerHTML = '<p class="error">Please provide both Supabase URL and Anon Key.</p>';
+          return;
+        }
+        
+        resultsDiv.innerHTML = '<p>Testing connection...</p>';
+        
+        try {
+          // Initialize Supabase client
+          const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+          
+          // Test authentication
+          resultsDiv.innerHTML += '<p>Testing authentication...</p>';
+          const { data: authData, error: authError } = await supabase.auth.getSession();
+          
+          if (authError) {
+            resultsDiv.innerHTML += `<p class="error">Authentication error: ${authError.message}</p>`;
+          } else {
+            resultsDiv.innerHTML += '<p class="success">Authentication successful!</p>';
+          }
+          
+          // Test database query
+          resultsDiv.innerHTML += '<p>Testing database query...</p>';
+          const { data: cases, error: queryError } = await supabase
+            .from('cases')
+            .select('*')
+            .limit(1);
+          
+          if (queryError) {
+            resultsDiv.innerHTML += `<p class="error">Query error: ${queryError.message}</p>`;
+          } else {
+            resultsDiv.innerHTML += '<p class="success">Query successful!</p>';
+            
+            if (cases && cases.length > 0) {
+              const caseId = cases[0].id;
+              
+              // Test specific case query
+              resultsDiv.innerHTML += `<p>Testing specific case query for ID: ${caseId}</p>`;
+              
+              const { data: singleCase, error: singleCaseError } = await supabase
+                .from('cases')
+                .select('*')
+                .eq('id', caseId)
+                .single();
+              
+              if (singleCaseError) {
+                resultsDiv.innerHTML += `<p class="error">Single case query error: ${singleCaseError.message}</p>`;
+              } else {
+                resultsDiv.innerHTML += '<p class="success">Single case query successful!</p>';
+                caseDataDiv.innerHTML = `<pre>${JSON.stringify(singleCase, null, 2)}</pre>`;
+              }
+            } else {
+              caseDataDiv.innerHTML = '<p>No cases found in the database.</p>';
+            }
+          }
+          
+        } catch (error) {
+          resultsDiv.innerHTML += `<p class="error">Unexpected error: ${error.message}</p>`;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

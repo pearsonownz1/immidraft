@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# Colors for terminal output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}Creating Workload Identity Federation credentials for Vercel OIDC...${NC}"
+
+# Check if gcloud is installed
+if ! command -v gcloud &> /dev/null
+then
+    echo -e "${RED}gcloud CLI not found. Please install it first.${NC}"
+    exit 1
+fi
+
+# Check if user is logged in to gcloud
+if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" &> /dev/null
+then
+    echo -e "${RED}You are not logged in to gcloud. Please run 'gcloud auth login' first.${NC}"
+    exit 1
+fi
+
+# Set variables
+PROJECT_ID="original-nation-459118-a4"
+POOL_ID="vercel-pool"
+PROVIDER_ID="vercel-provider"
+SERVICE_ACCOUNT="document-ai-service-account@original-nation-459118-a4.iam.gserviceaccount.com"
+OUTPUT_FILE="vercel-wif-credentials.json"
+
+# Create the WIF credentials for Vercel's OIDC provider
+echo -e "${YELLOW}Generating WIF credentials for Vercel OIDC...${NC}"
+gcloud iam workload-identity-pools create-cred-config \
+  "projects/${PROJECT_ID}/locations/global/workloadIdentityPools/${POOL_ID}/providers/${PROVIDER_ID}" \
+  --service-account="${SERVICE_ACCOUNT}" \
+  --output-file="${OUTPUT_FILE}" \
+  --credential-source-url="https://vercel.com/.well-known/openid-configuration" \
+  --subject-token-type="urn:ietf:params:oauth:token-type:jwt"
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Failed to create WIF credentials.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Successfully created WIF credentials: ${OUTPUT_FILE}${NC}"
+
+# Base64 encode the credentials file
+echo -e "${YELLOW}Base64 encoding the credentials file...${NC}"
+ENCODED_CREDENTIALS=$(cat "${OUTPUT_FILE}" | base64)
+echo "${ENCODED_CREDENTIALS}" > "${OUTPUT_FILE}.base64"
+echo -e "${GREEN}Base64 encoded credentials saved to: ${OUTPUT_FILE}.base64${NC}"
+
+# Update the Vercel environment variable
+echo -e "${YELLOW}Updating Vercel environment variables...${NC}"
+
+# Check if vercel CLI is installed
+if command -v vercel &> /dev/null; then
+    echo -e "${YELLOW}Setting GOOGLE_WIF_CREDENTIALS_JSON environment variable...${NC}"
+    vercel env rm GOOGLE_WIF_CREDENTIALS_JSON production -y || true
+    vercel env add GOOGLE_WIF_CREDENTIALS_JSON production <<< "${ENCODED_CREDENTIALS}"
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Successfully updated GOOGLE_WIF_CREDENTIALS_JSON environment variable.${NC}"
+    else
+        echo -e "${RED}Failed to update environment variable.${NC}"
+        echo -e "${YELLOW}Please manually add the WIF credentials to your Vercel project:${NC}"
+        echo -e "1. Go to your Vercel project → Settings → Environment Variables"
+        echo -e "2. Add a new environment variable:"
+        echo -e "   - Key: GOOGLE_WIF_CREDENTIALS_JSON"
+        echo -e "   - Value: (paste the content of ${OUTPUT_FILE}.base64)"
+        echo -e "   - Environment: Production (and optionally Preview & Development)"
+        echo -e "   - Type: Secret"
+    fi
+else
+    echo -e "${YELLOW}Vercel CLI not found. Please manually add the WIF credentials to your Vercel project:${NC}"
+    echo -e "1. Go to your Vercel project → Settings → Environment Variables"
+    echo -e "2. Add a new environment variable:"
+    echo -e "   - Key: GOOGLE_WIF_CREDENTIALS_JSON"
+    echo -e "   - Value: (paste the content of ${OUTPUT_FILE}.base64)"
+    echo -e "   - Environment: Production (and optionally Preview & Development)"
+    echo -e "   - Type: Secret"
+fi
+
+echo -e "${YELLOW}Next steps:${NC}"
+echo -e "1. Deploy your application to Vercel:"
+echo -e "   ./deploy-to-vercel.sh"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { aiService } from "@/services/aiService";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -91,6 +91,8 @@ interface LetterEditorProps {
     name: string;
   };
   showComments?: boolean;
+  onContentChange?: (content: string) => void;
+  onSave?: () => void;
 }
 
 const LetterEditor = ({
@@ -163,8 +165,24 @@ const LetterEditor = ({
   beneficiaryInfo = { name: "" },
   petitionerInfo = { name: "" },
   showComments = true,
+  onContentChange,
+  onSave,
 }: LetterEditorProps) => {
   const [content, setContent] = useState(initialContent);
+  
+  // Update content when initialContent changes
+  useEffect(() => {
+    if (initialContent && initialContent !== "Start drafting your letter here...") {
+      setContent(initialContent);
+    }
+  }, [initialContent]);
+
+  // Call onContentChange when content changes
+  useEffect(() => {
+    if (onContentChange) {
+      onContentChange(content);
+    }
+  }, [content, onContentChange]);
   const [activeTab, setActiveTab] = useState("editor");
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [showCommentsPanel, setShowCommentsPanel] = useState(showComments);
@@ -203,6 +221,7 @@ const LetterEditor = ({
         result = await aiService.draftExpertLetter(
           visaType,
           beneficiaryInfo,
+          {}, // Empty expert info object
           documentsList,
         );
       }
@@ -284,6 +303,7 @@ const LetterEditor = ({
             variant="outline"
             size="sm"
             className="flex items-center gap-1"
+            onClick={onSave}
           >
             <Save className="h-4 w-4" />
             Save
@@ -581,11 +601,11 @@ const LetterEditor = ({
                                 .toLowerCase()
                                 .includes(criterionTitle.toLowerCase()),
                             ) ||
-                            criterionTitle
-                              .toLowerCase()
-                              .includes(
-                                doc.criteria.some((c) => c.toLowerCase()),
-                              ))
+                            doc.criteria.some((c) => 
+                              criterionTitle
+                                .toLowerCase()
+                                .includes(c.toLowerCase())
+                            ))
                         );
                       })
                       .map((doc) => (
@@ -613,11 +633,11 @@ const LetterEditor = ({
                               .toLowerCase()
                               .includes(criterionTitle.toLowerCase()),
                           ) ||
-                          criterionTitle
-                            .toLowerCase()
-                            .includes(
-                              doc.criteria.some((c) => c.toLowerCase()),
-                            ))
+                          doc.criteria.some((c) => 
+                            criterionTitle
+                              .toLowerCase()
+                              .includes(c.toLowerCase())
+                          ))
                       );
                     }) && (
                       <SelectItem value="no-matching-docs">

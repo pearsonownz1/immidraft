@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Documents Schema for Document Processing</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #4b5563;
+            margin-top: 30px;
+        }
+        pre {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+        }
+        code {
+            font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+        }
+        .sql-code {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .comment {
+            color: #94a3b8;
+        }
+        .keyword {
+            color: #93c5fd;
+            font-weight: bold;
+        }
+        .identifier {
+            color: #c4b5fd;
+        }
+        .type {
+            color: #fda4af;
+        }
+        .string {
+            color: #86efac;
+        }
+        .instructions {
+            background-color: #fffbeb;
+            border-left: 4px solid #fbbf24;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .copy-button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .copy-button:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <h1>Update Documents Schema for Document Processing</h1>
+    
+    <div class="instructions">
+        <p><strong>Instructions:</strong> Copy the SQL code below and run it in your Supabase SQL Editor to update the documents table schema for document processing.</p>
+        <ol>
+            <li>Log in to your Supabase dashboard</li>
+            <li>Navigate to the SQL Editor</li>
+            <li>Create a new query</li>
+            <li>Paste the SQL code below</li>
+            <li>Run the query</li>
+        </ol>
+    </div>
+
+    <h2>SQL Code</h2>
+    
+    <div class="sql-code">
+        <pre><code><span class="comment">-- Add new columns to the documents table for document processing</span>
+<span class="keyword">ALTER TABLE</span> <span class="identifier">documents</span>
+<span class="keyword">ADD COLUMN IF NOT EXISTS</span> <span class="identifier">extracted_text</span> <span class="type">TEXT</span>,
+<span class="keyword">ADD COLUMN IF NOT EXISTS</span> <span class="identifier">summary</span> <span class="type">TEXT</span>,
+<span class="keyword">ADD COLUMN IF NOT EXISTS</span> <span class="identifier">ai_tags</span> <span class="type">TEXT[]</span>;
+
+<span class="comment">-- Create an index on the extracted_text column for faster full-text search</span>
+<span class="keyword">CREATE INDEX IF NOT EXISTS</span> <span class="identifier">idx_documents_extracted_text</span> <span class="keyword">ON</span> <span class="identifier">documents</span> <span class="keyword">USING</span> <span class="identifier">GIN</span> (<span class="identifier">to_tsvector</span>(<span class="string">'english'</span>, <span class="identifier">COALESCE</span>(<span class="identifier">extracted_text</span>, <span class="string">''</span>)));
+
+<span class="comment">-- Create an index on the summary column for faster full-text search</span>
+<span class="keyword">CREATE INDEX IF NOT EXISTS</span> <span class="identifier">idx_documents_summary</span> <span class="keyword">ON</span> <span class="identifier">documents</span> <span class="keyword">USING</span> <span class="identifier">GIN</span> (<span class="identifier">to_tsvector</span>(<span class="string">'english'</span>, <span class="identifier">COALESCE</span>(<span class="identifier">summary</span>, <span class="string">''</span>)));
+
+<span class="comment">-- Create an index on the ai_tags column for faster array operations</span>
+<span class="keyword">CREATE INDEX IF NOT EXISTS</span> <span class="identifier">idx_documents_ai_tags</span> <span class="keyword">ON</span> <span class="identifier">documents</span> <span class="keyword">USING</span> <span class="identifier">GIN</span> (<span class="identifier">ai_tags</span>);
+
+<span class="comment">-- Add a comment to the documents table to explain the new columns</span>
+<span class="keyword">COMMENT ON TABLE</span> <span class="identifier">documents</span> <span class="keyword">IS</span> <span class="string">'Documents uploaded by users, with extracted text, summaries, and AI-generated tags'</span>;
+<span class="keyword">COMMENT ON COLUMN</span> <span class="identifier">documents.extracted_text</span> <span class="keyword">IS</span> <span class="string">'Text extracted from the document using OCR or text extraction'</span>;
+<span class="keyword">COMMENT ON COLUMN</span> <span class="identifier">documents.summary</span> <span class="keyword">IS</span> <span class="string">'AI-generated summary of the document content'</span>;
+<span class="keyword">COMMENT ON COLUMN</span> <span class="identifier">documents.ai_tags</span> <span class="keyword">IS</span> <span class="string">'AI-generated tags for the document based on its content'</span>;</code></pre>
+    </div>
+
+    <button class="copy-button" onclick="copyToClipboard()">Copy SQL Code</button>
+
+    <h2>Verification</h2>
+    <p>After running the SQL, you can verify that the columns were added successfully by running the following query:</p>
+
+    <div class="sql-code">
+        <pre><code><span class="keyword">SELECT</span> <span class="identifier">column_name</span>, <span class="identifier">data_type</span>, <span class="identifier">col_description</span>(<span class="string">'documents'</span>::<span class="type">regclass</span>, <span class="identifier">ordinal_position</span>) <span class="keyword">as</span> <span class="identifier">description</span>
+<span class="keyword">FROM</span> <span class="identifier">information_schema.columns</span>
+<span class="keyword">WHERE</span> <span class="identifier">table_name</span> = <span class="string">'documents'</span>
+<span class="keyword">ORDER BY</span> <span class="identifier">ordinal_position</span>;</code></pre>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const sqlCode = `-- Add new columns to the documents table for document processing
+ALTER TABLE documents
+ADD COLUMN IF NOT EXISTS extracted_text TEXT,
+ADD COLUMN IF NOT EXISTS summary TEXT,
+ADD COLUMN IF NOT EXISTS ai_tags TEXT[];
+
+-- Create an index on the extracted_text column for faster full-text search
+CREATE INDEX IF NOT EXISTS idx_documents_extracted_text ON documents USING GIN (to_tsvector('english', COALESCE(extracted_text, '')));
+
+-- Create an index on the summary column for faster full-text search
+CREATE INDEX IF NOT EXISTS idx_documents_summary ON documents USING GIN (to_tsvector('english', COALESCE(summary, '')));
+
+-- Create an index on the ai_tags column for faster array operations
+CREATE INDEX IF NOT EXISTS idx_documents_ai_tags ON documents USING GIN (ai_tags);
+
+-- Add a comment to the documents table to explain the new columns
+COMMENT ON TABLE documents IS 'Documents uploaded by users, with extracted text, summaries, and AI-generated tags';
+COMMENT ON COLUMN documents.extracted_text IS 'Text extracted from the document using OCR or text extraction';
+COMMENT ON COLUMN documents.summary IS 'AI-generated summary of the document content';
+COMMENT ON COLUMN documents.ai_tags IS 'AI-generated tags for the document based on its content';`;
+            
+            navigator.clipboard.writeText(sqlCode).then(() => {
+                alert('SQL code copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy SQL code. Please select and copy manually.');
+            });
+        }
+    </script>
+</body>
+</html>

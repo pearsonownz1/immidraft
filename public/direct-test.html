@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Processing Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #f9f9f9;
+    }
+    .document-card {
+      border-left: 4px solid #4CAF50;
+      margin-top: 20px;
+    }
+    .document-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .document-type {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    .section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+    }
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .tag {
+      display: inline-block;
+      background-color: #e0f2f1;
+      color: #00796b;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    .log {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: monospace;
+      height: 200px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    .log-entry {
+      margin: 0;
+      padding: 2px 0;
+    }
+    .log-info {
+      color: #2196F3;
+    }
+    .log-error {
+      color: #F44336;
+    }
+    .log-success {
+      color: #4CAF50;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Document Processing Test</h1>
+  
+  <div class="card">
+    <p>This page tests the document processing functionality in a browser environment. It uses a mock implementation that simulates text extraction and AI-powered summary generation.</p>
+    <p><strong>Note:</strong> This is a standalone HTML file that can be opened directly in a browser without requiring Node.js.</p>
+    <button id="run-test">Run Test</button>
+  </div>
+  
+  <div id="results"></div>
+  
+  <div class="log" id="log">
+    <p class="log-entry log-info">Ready to run document processing test...</p>
+  </div>
+  
+  <script>
+    // Logger function
+    function log(message, type = 'info') {
+      const logElement = document.getElementById('log');
+      const entry = document.createElement('p');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = message;
+      logElement.appendChild(entry);
+      logElement.scrollTop = logElement.scrollHeight;
+    }
+    
+    // Mock document processing service
+    const documentProcessingService = {
+      async extractTextFromDocument(fileUrl, fileType) {
+        log(`Extracting text from ${fileType} document: ${fileUrl}`);
+        
+        // Generate simulated text based on file type
+        let simulatedText = `This is simulated extracted text from a ${fileType} document.`;
+        
+        // Add more specific content based on file type
+        if (fileType.includes('pdf')) {
+          simulatedText += ' The PDF document contains several pages of text that would normally be extracted using pdf-parse.';
+        } else if (fileType.includes('doc') || fileType.includes('docx')) {
+          simulatedText += ' The Word document contains formatted text that would normally be extracted using mammoth.';
+        } else if (fileType.includes('jpg') || fileType.includes('png') || fileType.includes('image')) {
+          simulatedText += ' The image contains text that would normally be extracted using OCR via tesseract.js.';
+        } else if (fileType.includes('html')) {
+          simulatedText += ' The HTML document contains structured content that would normally be extracted using unfluff.';
+        }
+        
+        // Add some content based on the URL
+        if (fileUrl.includes('letter') || fileUrl.includes('recommendation')) {
+          simulatedText += '\n\nDear Immigration Officer,\n\nI am writing to recommend the applicant for the visa. They have demonstrated extraordinary ability in their field...\n\nSincerely,\nDr. Jane Smith';
+        } else if (fileUrl.includes('award') || fileUrl.includes('certificate')) {
+          simulatedText += '\n\nCertificate of Achievement\n\nThis certifies that the applicant has been recognized for outstanding contributions to the field...';
+        } else if (fileUrl.includes('publication') || fileUrl.includes('paper')) {
+          simulatedText += '\n\nAbstract\n\nThis paper presents a novel approach to solving a significant problem in the field...';
+        } else if (fileUrl.includes('patent')) {
+          simulatedText += '\n\nPatent Description\n\nA novel method and apparatus for improving efficiency in the field...';
+        }
+        
+        return simulatedText;
+      },
+      
+      async generateSummaryAndTags(extractedText, fileName) {
+        log(`Generating summary and tags for document: ${fileName}`);
+        
+        // Generate document type based on filename
+        let documentType = "document";
+        if (fileName.toLowerCase().includes("letter") || fileName.toLowerCase().includes("recommendation")) {
+          documentType = "recommendation_letter";
+        } else if (fileName.toLowerCase().includes("patent")) {
+          documentType = "patent";
+        } else if (fileName.toLowerCase().includes("award") || fileName.toLowerCase().includes("certificate")) {
+          documentType = "award";
+        } else if (fileName.toLowerCase().includes("publication") || fileName.toLowerCase().includes("paper")) {
+          documentType = "publication";
+        }
+        
+        // Generate tags based on document type
+        const tags = [documentType];
+        if (documentType === "recommendation_letter") {
+          tags.push("support_evidence");
+        } else if (documentType === "patent") {
+          tags.push("original_contribution");
+        } else if (documentType === "award") {
+          tags.push("recognition");
+        } else if (documentType === "publication") {
+          tags.push("scholarly_work");
+        }
+        
+        // Generate a summary based on document type
+        let summary = "";
+        if (documentType === "recommendation_letter") {
+          summary = `This appears to be a recommendation letter for an immigration case. The letter discusses the applicant's achievements and contributions in their field.`;
+        } else if (documentType === "patent") {
+          summary = `This document appears to be a patent related to technology innovation. It describes a novel invention that demonstrates the applicant's original contribution to their field.`;
+        } else if (documentType === "award") {
+          summary = `This document appears to be an award or certificate recognizing the applicant's achievements in their field. It demonstrates recognition of the applicant's work.`;
+        } else if (documentType === "publication") {
+          summary = `This document appears to be a scholarly publication or research paper. It demonstrates the applicant's contributions to academic knowledge in their field.`;
+        } else {
+          summary = `This document contains information relevant to the immigration case. It provides evidence of the applicant's qualifications and achievements.`;
+        }
+        
+        // Add some content based on the extracted text
+        if (extractedText.includes("extraordinary ability")) {
+          summary += " The document specifically mentions the applicant's extraordinary ability in their field.";
+          tags.push("extraordinary_ability");
+        }
+        if (extractedText.includes("contributions")) {
+          summary += " It highlights significant contributions made by the applicant.";
+          tags.push("contributions");
+        }
+        
+        return {
+          summary,
+          tags
+        };
+      }
+    };
+    
+    // Mock document data for testing
+    const mockDocuments = [
+      {
+        id: 'test-doc-1',
+        name: 'Recommendation Letter from Dr. Smith.pdf',
+        type: 'pdf',
+        url: 'https://example.com/recommendation-letter.pdf'
+      },
+      {
+        id: 'test-doc-2',
+        name: 'Patent #12345 - Innovative Technology.pdf',
+        type: 'pdf',
+        url: 'https://example.com/patent.pdf'
+      },
+      {
+        id: 'test-doc-3',
+        name: 'Award Certificate - Excellence in Innovation.pdf',
+        type: 'pdf',
+        url: 'https://example.com/award.pdf'
+      },
+      {
+        id: 'test-doc-4',
+        name: 'Research Paper - Advances in AI.pdf',
+        type: 'pdf',
+        url: 'https://example.com/paper.pdf'
+      }
+    ];
+    
+    // Function to run the test
+    async function runTest() {
+      try {
+        log('Starting document processing test...', 'info');
+        
+        const resultsElement = document.getElementById('results');
+        resultsElement.innerHTML = '';
+        
+        for (const doc of mockDocuments) {
+          log(`Processing document: ${doc.name}`, 'info');
+          
+          // Extract text from the document (simulated)
+          const extractedText = await documentProcessingService.extractTextFromDocument(doc.url, doc.type);
+          log(`Extracted text: ${extractedText.substring(0, 50)}...`, 'info');
+          
+          // Generate summary and tags
+          const { summary, tags } = await documentProcessingService.generateSummaryAndTags(extractedText, doc.name);
+          log(`Generated summary: ${summary}`, 'info');
+          log(`Generated tags: ${tags.join(', ')}`, 'info');
+          
+          // Create a card for the document
+          const docCard = document.createElement('div');
+          docCard.className = 'card document-card';
+          
+          // Add document title and type
+          const docTitle = document.createElement('div');
+          docTitle.className = 'document-title';
+          docTitle.textContent = doc.name;
+          docCard.appendChild(docTitle);
+          
+          const docType = document.createElement('div');
+          docType.className = 'document-type';
+          docType.textContent = `Type: ${doc.type}`;
+          docCard.appendChild(docType);
+          
+          // Add extracted text section
+          const textSection = document.createElement('div');
+          textSection.className = 'section';
+          
+          const textTitle = document.createElement('div');
+          textTitle.className = 'section-title';
+          textTitle.textContent = 'Extracted Text:';
+          textSection.appendChild(textTitle);
+          
+          const textContent = document.createElement('div');
+          textContent.textContent = extractedText.substring(0, 200) + '...';
+          textSection.appendChild(textContent);
+          
+          docCard.appendChild(textSection);
+          
+          // Add summary section
+          const summarySection = document.createElement('div');
+          summarySection.className = 'section';
+          
+          const summaryTitle = document.createElement('div');
+          summaryTitle.className = 'section-title';
+          summaryTitle.textContent = 'Summary:';
+          summarySection.appendChild(summaryTitle);
+          
+          const summaryContent = document.createElement('div');
+          summaryContent.textContent = summary;
+          summarySection.appendChild(summaryContent);
+          
+          docCard.appendChild(summarySection);
+          
+          // Add tags section
+          const tagsSection = document.createElement('div');
+          tagsSection.className = 'section';
+          
+          const tagsTitle = document.createElement('div');
+          tagsTitle.className = 'section-title';
+          tagsTitle.textContent = 'Tags:';
+          tagsSection.appendChild(tagsTitle);
+          
+          const tagsContent = document.createElement('div');
+          tags.forEach(tag => {
+            const tagElement = document.createElement('span');
+            tagElement.className = 'tag';
+            tagElement.textContent = tag;
+            tagsContent.appendChild(tagElement);
+          });
+          tagsSection.appendChild(tagsContent);
+          
+          docCard.appendChild(tagsSection);
+          
+          // Add the card to the results
+          resultsElement.appendChild(docCard);
+          
+          log(`Document processed successfully: ${doc.name}`, 'success');
+        }
+        
+        log('All documents processed successfully!', 'success');
+      } catch (error) {
+        log(`Error testing document processing: ${error.message}`, 'error');
+      }
+    }
+    
+    // Add event listener to the run test button
+    document.getElementById('run-test').addEventListener('click', runTest);
+  </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+%PDF-1.4
+1 0 obj
+<</Type /Catalog /Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type /Pages /Kids [3 0 R] /Count 1>>
+endobj
+3 0 obj
+<</Type /Page /Parent 2 0 R /Resources 4 0 R /MediaBox [0 0 612 792] /Contents 6 0 R>>
+endobj
+4 0 obj
+<</Font <</F1 5 0 R>>>>
+endobj
+5 0 obj
+<</Type /Font /Subtype /Type1 /BaseFont /Helvetica>>
+endobj
+6 0 obj
+<</Length 676>>
+stream
+BT
+/F1 24 Tf
+50 700 Td
+(John Doe) Tj
+/F1 16 Tf
+0 -30 Td
+(Senior Software Engineer) Tj
+/F1 12 Tf
+0 -20 Td
+(Email: john.doe@example.com | Phone: (123) 456-7890) Tj
+0 -20 Td
+(Location: San Francisco, CA | Website: johndoe.dev) Tj
+/F1 14 Tf
+0 -30 Td
+(Summary) Tj
+/F1 12 Tf
+0 -20 Td
+(Experienced software engineer with over 8 years of expertise in full-stack) Tj
+0 -15 Td
+(development, specializing in React, Node.js, and cloud technologies.) Tj
+0 -15 Td
+(Proven track record of delivering high-quality, scalable applications.) Tj
+/F1 14 Tf
+0 -30 Td
+(Experience) Tj
+/F1 12 Tf
+0 -20 Td
+(Senior Software Engineer - TechCorp Inc. | January 2020 - Present) Tj
+0 -15 Td
+(Software Engineer - InnovateSoft LLC | March 2017 - December 2019) Tj
+0 -15 Td
+(Junior Developer - WebSolutions Co. | June 2015 - February 2017) Tj
+/F1 14 Tf
+0 -30 Td
+(Education) Tj
+/F1 12 Tf
+0 -20 Td
+(Master of Science in Computer Science - Stanford University | 2013 - 2015) Tj
+0 -15 Td
+(Bachelor of Science in Computer Science - UC Berkeley | 2009 - 2013) Tj
+ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f
+0000000009 00000 n
+0000000056 00000 n
+0000000111 00000 n
+0000000212 00000 n
+0000000253 00000 n
+0000000321 00000 n
+trailer
+<</Size 7 /Root 1 0 R>>
+startxref
+1048
+%%EOF

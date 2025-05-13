@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update RLS Policies Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #3ECF8E;
+            border-bottom: 2px solid #3ECF8E;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #3a3a3a;
+            margin-top: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            position: relative;
+        }
+        code {
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #3ECF8E;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background-color: #2eaf76;
+        }
+        .step {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #3ECF8E;
+            margin: 20px 0;
+        }
+        .warning {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .next-steps {
+            background-color: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Update RLS Policies Guide</h1>
+    
+    <div class="warning">
+        <h3>⚠️ Warning</h3>
+        <p>This guide updates Row Level Security (RLS) policies to allow anonymous access for development purposes. This is <strong>not recommended for production</strong> environments. In production, you should use proper authentication.</p>
+    </div>
+
+    <div class="instructions">
+        <h3>Instructions for Use</h3>
+        <ol>
+            <li>Log in to your Supabase dashboard at <a href="https://app.supabase.com/project/nhlvmzurgvkiltpzycyt/sql" target="_blank">https://app.supabase.com/project/nhlvmzurgvkiltpzycyt/sql</a></li>
+            <li>Navigate to the SQL Editor</li>
+            <li>Copy the SQL below using the "Copy All SQL" button</li>
+            <li>Paste and execute the SQL in the editor</li>
+            <li>After executing, run the insert-criteria-data.js script to populate the criteria data</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h2>Update RLS Policies SQL</h2>
+        <pre><code>-- Update RLS policies to allow anonymous access for development purposes
+-- WARNING: This is for development purposes only. In production, you should use proper authentication.
+
+-- Drop existing policies for cases table
+DROP POLICY IF EXISTS "Allow authenticated users to select cases" ON public.cases;
+DROP POLICY IF EXISTS "Allow authenticated users to insert cases" ON public.cases;
+DROP POLICY IF EXISTS "Allow authenticated users to update cases" ON public.cases;
+DROP POLICY IF EXISTS "Allow authenticated users to delete cases" ON public.cases;
+
+-- Create new policies for cases table that allow anonymous access
+CREATE POLICY "Allow all users to select cases" 
+  ON public.cases FOR SELECT 
+  USING (true);
+
+CREATE POLICY "Allow all users to insert cases" 
+  ON public.cases FOR INSERT 
+  WITH CHECK (true);
+
+CREATE POLICY "Allow all users to update cases" 
+  ON public.cases FOR UPDATE 
+  USING (true);
+
+CREATE POLICY "Allow all users to delete cases" 
+  ON public.cases FOR DELETE 
+  USING (true);
+
+-- Drop existing policies for documents table
+DROP POLICY IF EXISTS "Allow authenticated users to select documents" ON public.documents;
+DROP POLICY IF EXISTS "Allow authenticated users to insert documents" ON public.documents;
+DROP POLICY IF EXISTS "Allow authenticated users to update documents" ON public.documents;
+DROP POLICY IF EXISTS "Allow authenticated users to delete documents" ON public.documents;
+
+-- Create new policies for documents table that allow anonymous access
+CREATE POLICY "Allow all users to select documents" 
+  ON public.documents FOR SELECT 
+  USING (true);
+
+CREATE POLICY "Allow all users to insert documents" 
+  ON public.documents FOR INSERT 
+  WITH CHECK (true);
+
+CREATE POLICY "Allow all users to update documents" 
+  ON public.documents FOR UPDATE 
+  USING (true);
+
+CREATE POLICY "Allow all users to delete documents" 
+  ON public.documents FOR DELETE 
+  USING (true);
+
+-- Drop existing policies for criteria table
+DROP POLICY IF EXISTS "Allow authenticated users to select criteria" ON public.criteria;
+DROP POLICY IF EXISTS "Allow authenticated users to insert criteria" ON public.criteria;
+DROP POLICY IF EXISTS "Allow authenticated users to update criteria" ON public.criteria;
+DROP POLICY IF EXISTS "Allow authenticated users to delete criteria" ON public.criteria;
+
+-- Create new policies for criteria table that allow anonymous access
+CREATE POLICY "Allow all users to select criteria" 
+  ON public.criteria FOR SELECT 
+  USING (true);
+
+CREATE POLICY "Allow all users to insert criteria" 
+  ON public.criteria FOR INSERT 
+  WITH CHECK (true);
+
+CREATE POLICY "Allow all users to update criteria" 
+  ON public.criteria FOR UPDATE 
+  USING (true);
+
+CREATE POLICY "Allow all users to delete criteria" 
+  ON public.criteria FOR DELETE 
+  USING (true);
+
+-- Drop existing policies for document_criteria table
+DROP POLICY IF EXISTS "Allow authenticated users to select document_criteria" ON public.document_criteria;
+DROP POLICY IF EXISTS "Allow authenticated users to insert document_criteria" ON public.document_criteria;
+DROP POLICY IF EXISTS "Allow authenticated users to update document_criteria" ON public.document_criteria;
+DROP POLICY IF EXISTS "Allow authenticated users to delete document_criteria" ON public.document_criteria;
+
+-- Create new policies for document_criteria table that allow anonymous access
+CREATE POLICY "Allow all users to select document_criteria" 
+  ON public.document_criteria FOR SELECT 
+  USING (true);
+
+CREATE POLICY "Allow all users to insert document_criteria" 
+  ON public.document_criteria FOR INSERT 
+  WITH CHECK (true);
+
+CREATE POLICY "Allow all users to update document_criteria" 
+  ON public.document_criteria FOR UPDATE 
+  USING (true);
+
+CREATE POLICY "Allow all users to delete document_criteria" 
+  ON public.document_criteria FOR DELETE 
+  USING (true);</code><button class="copy-btn" onclick="copyAllSQL()">Copy All SQL</button></pre>
+    </div>
+
+    <div class="next-steps">
+        <h3>Next Steps</h3>
+        <p>After updating the RLS policies, run the following command to insert the sample criteria data:</p>
+        <pre><code>node insert-criteria-data.js</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+        
+        <p>Then verify the data was inserted correctly:</p>
+        <pre><code>node test-criteria-data.js</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+        
+        <p>You can also create a test case to verify the RLS policies are working:</p>
+        <pre><code>node update-rls-policies.js</code><button class="copy-btn" onclick="copyToClipboard(this)">Copy</button></pre>
+    </div>
+
+    <div class="step">
+        <h2>Database Status</h2>
+        <p>The database tables have been successfully created:</p>
+        <ul>
+            <li>✅ cases</li>
+            <li>✅ documents</li>
+            <li>✅ criteria</li>
+            <li>✅ document_criteria</li>
+        </ul>
+        
+        <p>After updating the RLS policies and inserting the criteria data, your database will be fully set up and ready to use with the application.</p>
+    </div>
+
+    <script>
+        function copyToClipboard(button) {
+            const pre = button.parentElement;
+            const code = pre.querySelector('code');
+            const text = code.innerText;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.innerText;
+                button.innerText = 'Copied!';
+                button.style.backgroundColor = '#28a745';
+                
+                setTimeout(() => {
+                    button.innerText = originalText;
+                    button.style.backgroundColor = '#3ECF8E';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                button.innerText = 'Failed!';
+                button.style.backgroundColor = '#dc3545';
+                
+                setTimeout(() => {
+                    button.innerText = 'Copy';
+                    button.style.backgroundColor = '#3ECF8E';
+                }, 2000);
+            });
+        }
+        
+        function copyAllSQL() {
+            const sqlCode = document.querySelector('.step pre code').innerText;
+            const button = document.querySelector('.step pre .copy-btn');
+            
+            navigator.clipboard.writeText(sqlCode).then(() => {
+                button.innerText = 'Copied!';
+                button.style.backgroundColor = '#28a745';
+                
+                setTimeout(() => {
+                    button.innerText = 'Copy All SQL';
+                    button.style.backgroundColor = '#3ECF8E';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                button.innerText = 'Failed!';
+                button.style.backgroundColor = '#dc3545';
+                
+                setTimeout(() => {
+                    button.innerText = 'Copy All SQL';
+                    button.style.backgroundColor = '#3ECF8E';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

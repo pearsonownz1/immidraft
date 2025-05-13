@@ -81,12 +81,15 @@ export const useCaseBuilderForm = (
   };
 
   const handleInputChange = (section: string, field: string, value: string) => {
-    setFormData({
-      ...formData,
-      [section]: {
-        ...formData[section as keyof typeof formData],
-        [field]: value,
-      },
+    setFormData((prevData) => {
+      const sectionData = prevData[section as keyof typeof prevData];
+      return {
+        ...prevData,
+        [section]: {
+          ...(typeof sectionData === 'object' && sectionData !== null ? sectionData : {}),
+          [field]: value,
+        },
+      };
     });
   };
 

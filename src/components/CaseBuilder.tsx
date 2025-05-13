@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createCase } from "@/services/caseService";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,9 +26,12 @@ import {
   User,
   FileUp,
   PenTool,
+  Briefcase,
+  GraduationCap,
+  FileCheck,
+  Shield,
 } from "lucide-react";
-import DocumentUploader from "./DocumentUploader";
-import LetterEditor from "./LetterEditor";
+import { DocumentUploader } from "./DocumentUploader";
 import CriteriaTracker from "./CriteriaTracker";
 
 interface CaseBuilderProps {
@@ -38,9 +43,21 @@ const CaseBuilder = ({
   initialStep = 0,
   onSave = () => {},
 }: CaseBuilderProps) => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [progress, setProgress] = useState(0);
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // Initialize nav collapsed state from localStorage or default to false
+  const [navCollapsed, setNavCollapsed] = useState(() => {
+    const savedState = localStorage.getItem('caseBuilderNavCollapsed');
+    return savedState ? JSON.parse(savedState) : false;
+  });
+
+  // Update localStorage when nav collapsed state changes
+  useEffect(() => {
+    localStorage.setItem('caseBuilderNavCollapsed', JSON.stringify(navCollapsed));
+  }, [navCollapsed]);
   const [formData, setFormData] = useState({
     clientInfo: {
       firstName: "",
@@ -59,35 +76,7 @@ const CaseBuilder = ({
     documents: [],
   });
 
-  const [caseDocuments, setCaseDocuments] = useState([
-    {
-      id: "1",
-      name: "Resume.pdf",
-      size: "245 KB",
-      type: "application/pdf",
-      tags: ["Resume", "Professional"],
-      criteria: ["Education", "Work Experience"],
-      uploadDate: "2023-06-15",
-    },
-    {
-      id: "2",
-      name: "Recommendation_Letter.docx",
-      size: "125 KB",
-      type: "application/docx",
-      tags: ["Letter", "Reference"],
-      criteria: ["Recommendation"],
-      uploadDate: "2023-06-14",
-    },
-    {
-      id: "3",
-      name: "Publication_Evidence.pdf",
-      size: "1.2 MB",
-      type: "application/pdf",
-      tags: ["Publication", "Evidence"],
-      criteria: ["Scholarly Articles"],
-      uploadDate: "2023-06-13",
-    },
-  ]);
+  const [caseDocuments, setCaseDocuments] = useState([]);
 
   const steps = [
     {
@@ -109,12 +98,7 @@ const CaseBuilder = ({
       id: "document-upload",
       title: "Document Upload",
       icon: <FileUp className="h-4 w-4" />,
-    },
-    {
-      id: "letter-drafting",
-      title: "Letter Drafting",
-      icon: <PenTool className="h-4 w-4" />,
-    },
+    }
   ];
 
   const visaTypes = [
@@ -151,7 +135,7 @@ const CaseBuilder = ({
     setFormData({
       ...formData,
       [section]: {
-        ...formData[section as keyof typeof formData],
+        ...(formData[section as keyof typeof formData] as Record<string, any>),
         [field]: value,
       },
     });
@@ -164,34 +148,65 @@ const CaseBuilder = ({
     });
   };
 
-  const handleSave = () => {
-    onSave(formData);
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      
+      // Format the data for Supabase
+      const caseData = {
+        client_first_name: formData.clientInfo.firstName,
+        client_last_name: formData.clientInfo.lastName,
+        client_email: formData.clientInfo.email,
+        client_phone: formData.clientInfo.phone,
+        client_company: formData.clientInfo.company,
+        visa_type: formData.visaType,
+        status: 'Draft',
+        beneficiary_name: formData.petitionDetails.beneficiaryName,
+        petitioner_name: formData.petitionDetails.petitionerName,
+        job_title: formData.petitionDetails.jobTitle,
+        job_description: formData.petitionDetails.jobDescription
+      };
+      
+      // Save to Supabase
+      const savedCase = await createCase(caseData);
+      
+      if (savedCase) {
+        // Call the onSave callback with the saved case
+        onSave(savedCase);
+        return savedCase.id;
+      } else {
+        throw new Error('Failed to save case');
+      }
+    } catch (error) {
+      console.error('Error saving case:', error);
+      setSaveError(error instanceof Error ? error.message : 'An unknown error occurred');
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleNav = () => {
     setNavCollapsed(!navCollapsed);
   };
 
+  // Main component render
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Case Builder</h1>
-            <p className="text-muted-foreground">
-              Build your visa petition case step by step
-            </p>
-          </div>
+      <div className="w-full px-12 py-6">
+        <div className="flex justify-end mb-2">
           <Button variant="outline" onClick={handleSave} className="bg-white">
             <Save className="mr-2 h-4 w-4" />
             Save Progress
           </Button>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex gap-8 px-8">
           {/* Left sidebar with vertical progress and steps */}
           <div
-            className={`${navCollapsed ? "w-16" : "w-64"} transition-all duration-300 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col`}
+            className={`${navCollapsed ? "w-20" : "w-72"} transition-all duration-300 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col`}
           >
             <div className="flex justify-between items-center p-4 border-b">
               {!navCollapsed && (
@@ -223,45 +238,47 @@ const CaseBuilder = ({
 
                   return (
                     <div key={step.id} className="relative">
-                      {/* Vertical progress line */}
-                      {index < steps.length - 1 && (
-                        <div className="absolute left-[19px] top-[32px] w-[2px] h-[calc(100%-16px)] bg-gray-200">
-                          {stepProgress <=
-                            (currentStep / (steps.length - 1)) * 100 && (
-                            <div
-                              className="absolute top-0 left-0 w-full bg-primary"
-                              style={{
-                                height: `${Math.min(100, ((currentStep - index) / 1) * 100)}%`,
-                              }}
-                            />
-                          )}
-                        </div>
-                      )}
-
-                      <button
-                        className={`flex items-center ${navCollapsed ? "justify-center" : "px-3"} py-3 rounded-md w-full ${isCurrent ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}
-                        onClick={() => setCurrentStep(index)}
-                      >
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isCurrent ? "bg-primary text-white" : isCompleted ? "bg-green-100 text-green-600" : "bg-gray-200 text-gray-500"}`}
-                        >
-                          {isCompleted ? (
-                            <CheckCircle className="h-4 w-4" />
-                          ) : (
-                            step.icon || (
-                              <span className="text-xs">{index + 1}</span>
-                            )
-                          )}
-                        </div>
-
-                        {!navCollapsed && (
-                          <span
-                            className={`ml-3 text-sm ${isCurrent ? "font-medium" : ""}`}
-                          >
-                            {step.title}
-                          </span>
+                      <div className="flex items-center relative">
+                        {/* Vertical progress line */}
+                        {index < steps.length - 1 && (
+                          <div className="absolute left-4 top-[32px] w-[2px] h-[calc(100%-16px)] bg-gray-200">
+                            {stepProgress <=
+                              (currentStep / (steps.length - 1)) * 100 && (
+                              <div
+                                className="absolute top-0 left-0 w-full bg-primary"
+                                style={{
+                                  height: `${Math.min(100, ((currentStep - index) / 1) * 100)}%`,
+                                }}
+                              />
+                            )}
+                          </div>
                         )}
-                      </button>
+
+                        <button
+                          className={`flex items-center ${navCollapsed ? "justify-center" : "px-3"} py-3 rounded-md w-full ${isCurrent ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}
+                          onClick={() => setCurrentStep(index)}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isCurrent ? "bg-primary text-white" : isCompleted ? "bg-green-100 text-green-600" : "bg-gray-200 text-gray-500"}`}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle className="h-4 w-4" />
+                            ) : (
+                              step.icon || (
+                                <span className="text-xs">{index + 1}</span>
+                              )
+                            )}
+                          </div>
+
+                          {!navCollapsed && (
+                            <span
+                              className={`ml-3 text-sm ${isCurrent ? "font-medium" : ""}`}
+                            >
+                              {step.title}
+                            </span>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -285,10 +302,10 @@ const CaseBuilder = ({
           </div>
 
           {/* Main content area */}
-          <div className="flex-1">
+          <div className="flex-1 max-w-none">
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
               {currentStep === 0 && (
-                <div className="p-6">
+                <div className="p-10">
                   <h2 className="text-xl font-semibold mb-1">
                     Client Information
                   </h2>
@@ -309,6 +326,7 @@ const CaseBuilder = ({
                               e.target.value,
                             )
                           }
+                          className="border-gray-200 focus:border-primary"
                         />
                       </div>
                       <div className="space-y-2">
@@ -323,6 +341,7 @@ const CaseBuilder = ({
                               e.target.value,
                             )
                           }
+                          className="border-gray-200 focus:border-primary"
                         />
                       </div>
                     </div>
@@ -339,6 +358,7 @@ const CaseBuilder = ({
                             e.target.value,
                           )
                         }
+                        className="border-gray-200 focus:border-primary"
                       />
                     </div>
                     <div className="space-y-2">
@@ -353,6 +373,7 @@ const CaseBuilder = ({
                             e.target.value,
                           )
                         }
+                        className="border-gray-200 focus:border-primary"
                       />
                     </div>
                     <div className="space-y-2">
@@ -367,6 +388,7 @@ const CaseBuilder = ({
                             e.target.value,
                           )
                         }
+                        className="border-gray-200 focus:border-primary"
                       />
                     </div>
                   </div>
@@ -374,7 +396,7 @@ const CaseBuilder = ({
               )}
 
               {currentStep === 1 && (
-                <div className="p-6">
+                <div className="p-10">
                   <h2 className="text-xl font-semibold mb-1">Visa Selection</h2>
                   <p className="text-muted-foreground mb-6">
                     Select the visa category for this petition
@@ -386,7 +408,7 @@ const CaseBuilder = ({
                         value={formData.visaType}
                         onValueChange={handleVisaTypeChange}
                       >
-                        <SelectTrigger id="visa-type">
+                        <SelectTrigger id="visa-type" className="border-gray-200 focus:border-primary">
                           <SelectValue placeholder="Select visa type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -407,7 +429,7 @@ const CaseBuilder = ({
                               ?.label
                           }
                         </h3>
-                        <p className="text-sm">
+                        <p className="text-sm text-gray-600">
                           {formData.visaType === "o1a" &&
                             "For individuals with extraordinary ability in sciences, education, business, or athletics."}
                           {formData.visaType === "o1b" &&
@@ -436,7 +458,7 @@ const CaseBuilder = ({
               )}
 
               {currentStep === 2 && (
-                <div className="p-6">
+                <div className="p-10">
                   <h2 className="text-xl font-semibold mb-1">
                     Petition Details
                   </h2>
@@ -458,6 +480,7 @@ const CaseBuilder = ({
                             e.target.value,
                           )
                         }
+                        className="border-gray-200 focus:border-primary"
                       />
                     </div>
                     <div className="space-y-2">
@@ -474,6 +497,7 @@ const CaseBuilder = ({
                             e.target.value,
                           )
                         }
+                        className="border-gray-200 focus:border-primary"
                       />
                     </div>
                     <div className="space-y-2">
@@ -488,13 +512,14 @@ const CaseBuilder = ({
                             e.target.value,
                           )
                         }
+                        className="border-gray-200 focus:border-primary"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="jobDescription">Job Description</Label>
                       <textarea
                         id="jobDescription"
-                        className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        className="w-full min-h-[100px] rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                         value={formData.petitionDetails.jobDescription}
                         onChange={(e) =>
                           handleInputChange(
@@ -510,7 +535,7 @@ const CaseBuilder = ({
               )}
 
               {currentStep === 3 && (
-                <div className="p-6">
+                <div className="p-10">
                   <h2 className="text-xl font-semibold mb-1">
                     Document Upload
                   </h2>
@@ -523,92 +548,79 @@ const CaseBuilder = ({
                       setCaseDocuments(updatedDocs)
                     }
                   />
+                  
+                  {saveError && (
+                    <div className="mt-8 mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
+                      {saveError}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {currentStep === 4 && (
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold mb-1">
-                    Letter Drafting
-                  </h2>
-                  <p className="text-muted-foreground mb-6">
-                    Draft and edit petition letters with AI assistance
-                  </p>
-                  <Tabs defaultValue="petition">
-                    <TabsList className="mb-4">
-                      <TabsTrigger value="petition">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Petition Letter
-                      </TabsTrigger>
-                      <TabsTrigger value="expert">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Expert Opinion Letter
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="petition">
-                      <LetterEditor
-                        letterType="petition"
-                        documents={caseDocuments}
-                        beneficiaryInfo={{
-                          name: formData.petitionDetails.beneficiaryName,
-                        }}
-                        petitionerInfo={{
-                          name: formData.petitionDetails.petitionerName,
-                        }}
-                        showComments={false}
-                      />
-                    </TabsContent>
-                    <TabsContent value="expert">
-                      <LetterEditor
-                        letterType="expert"
-                        documents={caseDocuments}
-                        beneficiaryInfo={{
-                          name: formData.petitionDetails.beneficiaryName,
-                        }}
-                        showComments={false}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              )}
+              {/* Letter drafting step removed */}
 
-              <div className="flex justify-between p-6 border-t">
+              <div className="flex justify-between p-10 border-t">
                 <Button
                   variant="outline"
                   onClick={handlePrevious}
                   disabled={currentStep === 0}
+                  className="border-gray-200 hover:bg-gray-50 hover:text-gray-900"
                 >
                   <ChevronLeft className="mr-2 h-4 w-4" />
                   Previous
                 </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={currentStep === steps.length - 1}
-                  className="bg-primary"
-                >
-                  {currentStep === steps.length - 2 ? (
-                    <>
-                      Finish
-                      <CheckCircle className="ml-2 h-4 w-4" />
-                    </>
-                  ) : (
+                {currentStep === steps.length - 1 ? (
+                  <Button
+                    onClick={async () => {
+                      // Save the case data and show completion message
+                      const caseId = await handleSave();
+                      
+                      if (caseId) {
+                        // Call the onSave callback for any cleanup
+                        onSave({
+                          id: caseId,
+                          action: "openWorkspace",
+                          data: {
+                            ...formData,
+                            id: caseId
+                          }
+                        });
+                        
+                        // Navigate to the case workspace page
+                        navigate(`/case/${caseId}`);
+                      }
+                    }}
+                    disabled={isSaving}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    {isSaving ? (
+                      <>
+                        <span className="animate-spin mr-2">⟳</span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        Finish
+                        <CheckCircle className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNext}
+                    className="bg-primary hover:bg-primary/90"
+                  >
                     <>
                       Next
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </>
-                  )}
-                </Button>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right sidebar with criteria tracker */}
-          <div className="w-80">
-            <CriteriaTracker
-              visaType={formData.visaType}
-              onCriterionClick={(id) => console.log("Criterion clicked:", id)}
-            />
-          </div>
+          {/* Criteria tracker removed */}
         </div>
       </div>
     </div>

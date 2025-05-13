@@ -77,7 +77,7 @@ const CriteriaTracker: React.FC<CriteriaTrackerProps> = ({
 
   return (
     <div className="w-full h-full bg-white shadow-sm border border-gray-200 rounded-lg">
-      <div className="p-4 pb-2">
+      <div className="p-6 pb-4">
         <h2 className="text-lg font-semibold">Criteria Tracker</h2>
         <div className="mt-2">
           <div className="flex justify-between text-sm mb-1">
@@ -87,7 +87,7 @@ const CriteriaTracker: React.FC<CriteriaTrackerProps> = ({
           <Progress value={totalProgress} className="h-2" />
         </div>
       </div>
-      <div className="pt-0 px-3 overflow-auto max-h-[calc(100vh-200px)]">
+      <div className="pt-0 px-6 overflow-auto max-h-[calc(100vh-200px)]">
         <Accordion
           type="single"
           collapsible
@@ -112,14 +112,14 @@ const CriteriaTracker: React.FC<CriteriaTrackerProps> = ({
                 </div>
               </AccordionTrigger>
               <AccordionContent>
-                <div className="space-y-2 py-1">
+                <div className="space-y-3 py-2">
                   {category.criteria.map((criterion) => (
                     <TooltipProvider key={criterion.id}>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
-                            className={`w-full justify-start text-left p-2 h-auto ${getStatusColor(criterion.status)}`}
+                            className={`w-full justify-start text-left p-3 h-auto ${getStatusColor(criterion.status)}`}
                             onClick={() => onCriterionClick(criterion.id)}
                           >
                             <div className="flex items-center gap-2 w-full">

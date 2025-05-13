@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Storage RLS Policies (Corrected)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #3ecf8e;
+        }
+        pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 14px;
+            line-height: 1.45;
+            border: 1px solid #e1e4e8;
+        }
+        .copy-button {
+            background-color: #3ecf8e;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .copy-button:hover {
+            background-color: #2eaf76;
+        }
+    </style>
+</head>
+<body>
+    <h1>Supabase Storage RLS Policies (Corrected)</h1>
+    
+    <button class="copy-button" onclick="copyToClipboard()">Copy SQL to Clipboard</button>
+    
+    <pre id="sql-content">-- SQL script to set up RLS policies for the existing 'documents' bucket in Supabase
+
+-- First, let's check if the bucket exists
+SELECT * FROM storage.buckets WHERE name = 'documents';
+
+-- Create the bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('documents', 'documents', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Now let's set up the policies
+
+-- 1. Allow public read access (SELECT) for anonymous users
+CREATE POLICY "Allow public read access"
+ON storage.objects
+FOR SELECT
+TO anon
+USING (bucket_id = 'documents');
+
+-- 2. Allow public read access (SELECT) for authenticated users
+CREATE POLICY "Allow authenticated read access"
+ON storage.objects
+FOR SELECT
+TO authenticated
+USING (bucket_id = 'documents');
+
+-- 3. Allow authenticated uploads (INSERT)
+CREATE POLICY "Allow authenticated uploads"
+ON storage.objects
+FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'documents');
+
+-- 4. Allow users to update their files (UPDATE)
+CREATE POLICY "Allow users to update their files"
+ON storage.objects
+FOR UPDATE
+TO authenticated
+USING (bucket_id = 'documents' AND (auth.uid() = owner))
+WITH CHECK (bucket_id = 'documents' AND (auth.uid() = owner));
+
+-- 5. Allow users to delete their files (DELETE)
+CREATE POLICY "Allow users to delete their files"
+ON storage.objects
+FOR DELETE
+TO authenticated
+USING (bucket_id = 'documents' AND (auth.uid() = owner));
+
+-- Verify the policies were created
+SELECT 
+  policyname, 
+  permissive,
+  roles,
+  cmd,
+  tablename
+FROM pg_policies 
+WHERE tablename = 'objects' AND schemaname = 'storage'
+ORDER BY cmd;</pre>
+
+    <script>
+        function copyToClipboard() {
+            const sqlContent = document.getElementById('sql-content');
+            const textArea = document.createElement('textarea');
+            textArea.value = sqlContent.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            const button = document.querySelector('.copy-button');
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

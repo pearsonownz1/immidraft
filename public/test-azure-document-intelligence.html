@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Azure Document Intelligence Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Azure Document Intelligence Integration</h1>
+    
+    <div class="container">
+        <p>This page tests the integration with Azure Document Intelligence for document processing.</p>
+        
+        <div>
+            <h2>Upload and Process Document</h2>
+            <p>Select a document (PDF, DOCX, or image) to upload and process:</p>
+            <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.jpg,.jpeg,.png">
+            <button id="uploadBtn">Upload and Process</button>
+        </div>
+        
+        <div class="result" id="result">
+            <p>Results will appear here...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('result');
+            
+            uploadBtn.addEventListener('click', async function() {
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    resultDiv.innerHTML = '<p class="error">Please select a file first.</p>';
+                    return;
+                }
+                
+                const file = fileInput.files[0];
+                resultDiv.innerHTML = '<p>Processing document, please wait...</p>';
+                
+                try {
+                    // Call the document processing API directly
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    // Convert file to data URL for processing
+                    const reader = new FileReader();
+                    reader.onload = async function(e) {
+                        const dataUrl = e.target.result;
+                        
+                        try {
+                            const response = await fetch('http://localhost:8080/process-document', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    documentUrl: dataUrl,
+                                    documentName: file.name,
+                                    documentType: getDocumentType(file.name)
+                                }),
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`API error: ${response.statusText}`);
+                            }
+                            
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                let resultHtml = '<p class="success">Document processed successfully!</p>';
+                                resultHtml += `<h3>Document Name:</h3><p>${data.documentName}</p>`;
+                                resultHtml += `<h3>Document Type:</h3><p>${data.documentType}</p>`;
+                                resultHtml += `<h3>Summary:</h3><p>${data.summary}</p>`;
+                                resultHtml += `<h3>Tags:</h3><p>${data.tags.join(', ')}</p>`;
+                                resultHtml += `<h3>Extracted Text (first 500 chars):</h3><p>${data.extractedText.substring(0, 500)}${data.extractedText.length > 500 ? '...' : ''}</p>`;
+                                
+                                resultDiv.innerHTML = resultHtml;
+                            } else {
+                                resultDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
+                            }
+                        } catch (error) {
+                            resultDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+                        }
+                    };
+                    
+                    reader.readAsDataURL(file);
+                } catch (error) {
+                    resultDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+                }
+            });
+            
+            function getDocumentType(fileName) {
+                const extension = fileName.split('.').pop().toLowerCase();
+                
+                switch (extension) {
+                    case 'pdf':
+                        return 'pdf';
+                    case 'doc':
+                    case 'docx':
+                        return 'docx';
+                    case 'jpg':
+                    case 'jpeg':
+                    case 'png':
+                        return 'image';
+                    default:
+                        return 'unknown';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
