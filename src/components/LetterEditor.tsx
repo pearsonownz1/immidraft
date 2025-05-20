@@ -91,10 +91,12 @@ interface LetterEditorProps {
     name: string;
   };
   showComments?: boolean;
+  visaType?: string; // Added visaType to props
 }
 
 const LetterEditor = ({
   letterType = "petition",
+  visaType: propsVisaType, // Renamed to avoid conflict with local variable
   initialContent = "Start drafting your letter here...",
   criteria = [
     {
@@ -187,21 +189,24 @@ const LetterEditor = ({
 
     try {
       // Use data from props
-      const visaType = letterType === "petition" ? "O-1A" : "Expert Opinion";
+      const currentVisaType = propsVisaType || (letterType === "petition" ? "O-1A" : "Expert Opinion");
       // Use actual documents from props
       const documentsList = documents || [];
 
       let result;
       if (letterType === "petition") {
         result = await aiService.draftPetitionLetter(
-          visaType,
+          currentVisaType, // Pass the correct visaType
           beneficiaryInfo,
           petitionerInfo,
           documentsList,
         );
       } else {
+        // For expert letters, visaType might not be as directly relevant for the intro,
+        // but we pass it along for consistency or future use by the AI service.
+        // The aiService.draftExpertLetter might use it to tailor certain phrases if needed.
         result = await aiService.draftExpertLetter(
-          visaType,
+          currentVisaType, // Pass the correct visaType
           beneficiaryInfo,
           documentsList,
         );
@@ -267,7 +272,7 @@ const LetterEditor = ({
               : "Expert Opinion Letter"}
           </h2>
           <Badge variant="outline" className="ml-2">
-            {letterType === "petition" ? "O-1A Visa" : "Expert Opinion"}
+            {propsVisaType || (letterType === "petition" ? "O-1A" : "Expert Opinion")}
           </Badge>
         </div>
         <div className="flex items-center space-x-2">

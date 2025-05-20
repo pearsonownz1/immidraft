@@ -188,6 +188,16 @@ const CaseBuilder = ({
           </Button>
         </div>
 
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+          <h3 className="font-semibold mb-1">Quick Guide:</h3>
+          <ol className="list-decimal list-inside space-y-1">
+            <li>Start by entering Client Information and selecting the Visa Type.</li>
+            <li>Provide specific Petition Details.</li>
+            <li>Upload all necessary supporting documents in the Document Upload section. Ensure you verify the auto-detected document types.</li>
+            <li>Finally, use the Letter Drafting section to generate and refine your petition or expert opinion letters.</li>
+          </ol>
+        </div>
+
         <div className="flex gap-6">
           {/* Left sidebar with vertical progress and steps */}
           <div
@@ -548,6 +558,12 @@ const CaseBuilder = ({
                     <TabsContent value="petition">
                       <LetterEditor
                         letterType="petition"
+                        visaType={
+                          visaTypes
+                            .find((vt) => vt.value === formData.visaType)
+                            ?.label.match(/([A-Z0-9-]+)/)?.[0] ||
+                          formData.visaType
+                        }
                         documents={caseDocuments}
                         beneficiaryInfo={{
                           name: formData.petitionDetails.beneficiaryName,
@@ -561,6 +577,12 @@ const CaseBuilder = ({
                     <TabsContent value="expert">
                       <LetterEditor
                         letterType="expert"
+                        visaType={
+                          visaTypes
+                            .find((vt) => vt.value === formData.visaType)
+                            ?.label.match(/([A-Z0-9-]+)/)?.[0] ||
+                          formData.visaType
+                        }
                         documents={caseDocuments}
                         beneficiaryInfo={{
                           name: formData.petitionDetails.beneficiaryName,

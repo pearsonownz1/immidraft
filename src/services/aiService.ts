@@ -75,6 +75,7 @@ export const aiService = {
       // Generic tags for other documents
       analysis.tags = ["Document", "Evidence"];
       analysis.criteria = [];
+      analysis.summary = "Basic file properties read. Type could not be automatically determined.";
     }
 
     return analysis;
@@ -124,9 +125,45 @@ export const aiService = {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
+    let criteriaSection = "";
+    if (visaType === "O-1A") {
+      criteriaSection = `
+The O-1A visa requires evidence of extraordinary ability in the sciences, arts, education, business, or athletics. Based on the provided documents, ${beneficiaryInfo.name || "the beneficiary"} demonstrates exceptional skill in [mention a fabricated achievement, e.g., 'developing a novel algorithm for data analysis']. This clearly aligns with the O-1A criteria.
+Specifically, the criterion regarding [Mention a specific O-1A criterion, e.g., 'receipt of major internationally recognized awards'] is supported by ${documents.length > 0 ? `the submitted document '${documents[0].name}'` : '[Reference a document type, e.g., \'the submitted award certificates\']'}.
+This evidence underscores their position at the top of their field.`;
+    } else if (visaType === "EB-1A") {
+      criteriaSection = `
+The EB-1A classification for individuals of extraordinary ability is for those who are recognized as being at the very top of their field. ${beneficiaryInfo.name || "the beneficiary"}'s work on [mention a fabricated project, e.g., 'pioneering research in renewable energy sources'] showcases this level of expertise, as detailed in ${documents.length > 0 ? `the publication '${documents[0].name}'` : '[Reference a document type, e.g., \'a leading scientific journal\']'}.
+The evidence presented, such as ${documents.length > 1 ? `'${documents[1].name}'` : '[mention another type of evidence, e.g., \'letters of support from leading experts\']'}, substantiates the claim of sustained national or international acclaim.`;
+    } else {
+      criteriaSection = `
+For the ${visaType} classification, it is important to establish ${beneficiaryInfo.name || "the beneficiary"}'s significant contributions and high level of expertise in their field. The documentation provided, such as ${documents.length > 0 ? `'${documents[0].name}'` : '[Reference a document type, e.g., \'their portfolio\']'}, supports this.
+Their accomplishments are demonstrably above that of an ordinary professional.`;
+    }
+
     // Mock response with placeholder content
     return {
-      content: `[Expert Letterhead]\n\nDate: ${new Date().toLocaleDateString()}\n\nRe: Expert Opinion Letter for ${beneficiaryInfo.name || "the beneficiary"}'s ${visaType} Petition\n\nTo Whom It May Concern:\n\nI am writing this letter as an expert in the field of [Expert's Field] to provide my professional opinion regarding the extraordinary ability of ${beneficiaryInfo.name || "the beneficiary"} in the field of [Beneficiary's Field].\n\nBased on my review of the provided documentation and my expertise in this field, I can confidently state that ${beneficiaryInfo.name || "the beneficiary"} meets the criteria for classification as an individual of extraordinary ability under the ${visaType} category.\n\n[AI would generate specific content based on documents and criteria here]\n\nIn conclusion, based on my expert evaluation of the evidence provided, it is my professional opinion that ${beneficiaryInfo.name || "the beneficiary"} clearly qualifies as an individual with extraordinary ability in [field] for the purposes of the ${visaType} visa classification.\n\nSincerely,\n\n[Expert Name]\n[Expert Qualifications]\n[Contact Information]`,
+      content: `[Expert Letterhead]
+
+Date: ${new Date().toLocaleDateString()}
+
+Re: Expert Opinion Letter for ${beneficiaryInfo.name || "the beneficiary"}'s ${visaType} Petition
+
+To Whom It May Concern:
+
+I am writing this letter as an expert in the field of [Expert's Field] to provide my professional opinion regarding the qualifications of ${beneficiaryInfo.name || "the beneficiary"} for the ${visaType} classification. My assessment is based on a thorough review of the following documents: ${documents.map(doc => doc.name).join(', ') || 'the provided documentation'}.
+
+I have carefully examined the evidence provided, focusing on ${beneficiaryInfo.name || "the beneficiary"}'s contributions to the field of [Beneficiary's Field].
+
+${criteriaSection}
+
+In conclusion, based on my expert evaluation of the evidence provided, it is my professional opinion that ${beneficiaryInfo.name || "the beneficiary"} clearly qualifies as an individual with ${visaType === "O-1A" || visaType === "EB-1A" ? "extraordinary ability" : "the required high level of expertise"} in [Beneficiary's Field] for the purposes of the ${visaType} visa classification.
+
+Sincerely,
+
+[Expert Name]
+[Expert Qualifications]
+[Contact Information]`,
       citations: [
         {
           id: "1",
@@ -154,9 +191,55 @@ export const aiService = {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
+    let argumentSection = "";
+    const beneficiaryName = beneficiaryInfo.name || "the beneficiary";
+    const petitionerName = petitionerInfo.name || "the petitioner";
+    // Assuming beneficiaryInfo might have these, if not, they'll be placeholder strings
+    const beneficiaryProfession = beneficiaryInfo.profession || "[Beneficiary's Profession]"; 
+    const beneficiaryCountry = beneficiaryInfo.country || "[Beneficiary's Country]";
+
+    if (visaType === "O-1A") {
+      argumentSection = `
+The petitioner, ${petitionerName}, seeks to employ ${beneficiaryName} in a critical role requiring extraordinary ability. The evidence overwhelmingly shows that ${beneficiaryName} meets multiple O-1A criteria, including [mention a fabricated criterion met, e.g., 'original scientific contributions of major significance in the field of ${beneficiaryProfession}'].
+For instance, Exhibit A, (${documents.length > 0 ? documents[0].name : '[Document Name]'}), details ${beneficiaryName}'s pivotal role in [fabricate detail, e.g., 'the development of a new software platform that revolutionized industry standards']. This work has been recognized through [mention fabricated recognition, e.g., 'the receipt of the Tech Innovator Award'].
+Furthermore, ${beneficiaryName} has demonstrated [mention another fabricated criterion, e.g., 'authorship of scholarly articles in the field in professional or major trade publications or other major media']. Exhibit B, (${documents.length > 1 ? documents[1].name : '[Document Name]'}), provides examples of such publications.`;
+    } else if (visaType === "EB-1A") {
+      argumentSection = `
+This EB-1A petition is filed on behalf of ${beneficiaryName}, an individual of extraordinary ability who seeks to continue working in their field of ${beneficiaryProfession} in the United States. Their groundbreaking work in [mention fabricated area, e.g., 'quantum computing'], as evidenced by Exhibit A (${documents.length > 0 ? documents[0].name : '[Document Name]'}), has garnered international acclaim and has significantly advanced the field.
+${beneficiaryName} has sustained this acclaim through [mention fabricated achievement, e.g., 'keynote presentations at major international conferences and publications in top-tier journals']. The provided documentation, including Exhibit C (${documents.length > 2 ? documents[2].name : '[Document Name]'}), which contains letters from leading experts, attests to their influence and standing at the pinnacle of their profession.`;
+    } else {
+      argumentSection = `
+This petition for ${visaType} is based on ${beneficiaryName}'s qualifications as a highly skilled ${beneficiaryProfession}. The supporting documents, including Exhibit A (${documents.length > 0 ? documents[0].name : '[Document Name]'}), confirm their advanced degree and extensive experience in [their field].
+${petitionerName} requires an individual with ${beneficiaryName}'s specific skillset for the position of [Position Title], which is critical to our operations in [Industry/Sector].`;
+    }
+    
     // Mock response with placeholder content
     return {
-      content: `[Law Firm Letterhead]\n\nDate: ${new Date().toLocaleDateString()}\n\nU.S. Citizenship and Immigration Services\nP.O. Box [Address]\n[City, State ZIP]\n\nRe: Petition for ${visaType} Classification for ${beneficiaryInfo.name || "the beneficiary"}\n\nDear Sir or Madam:\n\nThis letter is submitted in support of the petition of ${petitionerInfo.name || "the petitioner"} seeking to classify ${beneficiaryInfo.name || "the beneficiary"} as ${visaType === "O-1A" ? "an alien of extraordinary ability" : visaType === "EB-1A" ? "an alien of extraordinary ability" : "a qualified professional"} pursuant to Section [relevant section] of the Immigration and Nationality Act.\n\n[AI would generate specific content based on documents and criteria here]\n\nBased on the evidence presented and the applicable legal standards, we respectfully submit that ${beneficiaryInfo.name || "the beneficiary"} qualifies for classification under the ${visaType} category. We appreciate your consideration of this petition and are available to provide any additional information that may be required.\n\nRespectfully submitted,\n\n[Attorney Name]\n[Law Firm]`,
+      content: `[Law Firm Letterhead]
+
+Date: ${new Date().toLocaleDateString()}
+
+U.S. Citizenship and Immigration Services
+P.O. Box [Address]
+[City, State ZIP]
+
+Re: Petition for ${visaType} Classification for ${beneficiaryName} (Beneficiary) on behalf of ${petitionerName} (Petitioner)
+
+Dear Sir or Madam:
+
+This letter is submitted in support of the petition of ${petitionerName} seeking to classify ${beneficiaryName} as ${visaType === "O-1A" || visaType === "EB-1A" ? "an alien of extraordinary ability" : "a qualified professional"} pursuant to Section [relevant section] of the Immigration and Nationality Act, for the ${visaType} visa category.
+The beneficiary, ${beneficiaryName}, is a distinguished ${beneficiaryProfession} from ${beneficiaryCountry}.
+
+${argumentSection}
+
+Based on the evidence presented and the applicable legal standards, we respectfully submit that ${beneficiaryName} clearly qualifies for classification under the ${visaType} category. The submitted documentation comprehensively demonstrates that ${beneficiaryName} meets the statutory and regulatory requirements for this visa classification.
+
+We appreciate your consideration of this petition and are available to provide any additional information that may be required.
+
+Respectfully submitted,
+
+[Attorney Name]
+[Law Firm]`,
       citations: [
         {
           id: "1",

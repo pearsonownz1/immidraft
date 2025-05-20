@@ -26,13 +26,32 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "./ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select"; // Added Select imports
 import { aiService, AICriteriaAnalysis } from "../services/aiService";
+
+const PRIMARY_DOCUMENT_TYPES = [
+  "Resume",
+  "Support Letter",
+  "Employment Verification",
+  "Academic Record",
+  "Publication",
+  "Award/Certificate",
+  "Media Article",
+  "Other",
+];
 
 interface Document {
   id: string;
   name: string;
   size: string;
-  type: string;
+  type: string; // This is the MIME type
+  documentType?: string; // Add this for user-defined type
   tags: string[];
   criteria: string[];
   uploadDate: string;
@@ -59,6 +78,7 @@ const DocumentUploader = ({
       name: "Resume.pdf",
       size: "245 KB",
       type: "application/pdf",
+      documentType: "Resume",
       tags: ["Resume", "Professional"],
       criteria: ["Education", "Work Experience"],
       uploadDate: "2023-06-15",
@@ -70,6 +90,7 @@ const DocumentUploader = ({
       name: "Recommendation_Letter.docx",
       size: "125 KB",
       type: "application/docx",
+      documentType: "Support Letter",
       tags: ["Letter", "Reference"],
       criteria: ["Recommendation"],
       uploadDate: "2023-06-14",
@@ -79,6 +100,7 @@ const DocumentUploader = ({
       name: "Publication_Evidence.pdf",
       size: "1.2 MB",
       type: "application/pdf",
+      documentType: "Publication",
       tags: ["Publication", "Evidence"],
       criteria: ["Scholarly Articles"],
       uploadDate: "2023-06-13",
@@ -104,6 +126,8 @@ const DocumentUploader = ({
     null,
   );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [analysisFeedback, setAnalysisFeedback] = useState<string | null>(null);
   const [documentsState, setDocumentsState] = useState<Document[]>(documents);
   const [criteriaAnalysis, setCriteriaAnalysis] = useState<
     Record<string, AICriteriaAnalysis>
@@ -112,18 +136,18 @@ const DocumentUploader = ({
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(
     null,
   );
-  const [availableTags, setAvailableTags] = useState([
-    "Resume",
-    "Letter",
-    "Publication",
-    "Award",
-    "Certificate",
-    "Reference",
-    "Evidence",
-    "Professional",
-    "Academic",
-    "Media",
-  ]);
+  // const [availableTags, setAvailableTags] = useState([ // availableTags is no longer used in this dialog
+  //   "Resume",
+  //   "Letter",
+  //   "Publication",
+  //   "Award",
+  //   "Certificate",
+  //   "Reference",
+  //   "Evidence",
+  //   "Professional",
+  //   "Academic",
+  //   "Media",
+  // ]);
 
   // Handle drag events
   const handleDrag = (e: React.DragEvent) => {
@@ -182,6 +206,7 @@ const DocumentUploader = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
+    setAnalysisFeedback(null); // Clear previous feedback
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const filesArray = Array.from(e.dataTransfer.files);
@@ -192,6 +217,7 @@ const DocumentUploader = ({
 
   // Handle file input change
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAnalysisFeedback(null); // Clear previous feedback
     if (e.target.files && e.target.files.length > 0) {
       const filesArray = Array.from(e.target.files);
       onUpload(filesArray);
@@ -202,6 +228,10 @@ const DocumentUploader = ({
   // Process uploaded files with AI analysis
   const processUploadedFiles = async (files: File[]) => {
     setIsAnalyzing(true);
+    setUploadError(null);
+    // setAnalysisFeedback(null); // Already cleared in handleDrop/handleFileChange
+
+    let lastFileSummary: string | undefined = undefined;
 
     try {
       const newDocuments: Document[] = [];
@@ -209,6 +239,19 @@ const DocumentUploader = ({
       for (const file of files) {
         // Analyze document with AI
         const analysis = await aiService.analyzeDocument(file);
+        lastFileSummary = analysis.summary; // Store summary of the last analyzed file
+
+        // Determine documentType from tags
+        let determinedDocumentType = "Other"; // Default
+        if (analysis.tags.includes("Resume")) {
+          determinedDocumentType = "Resume";
+        } else if (analysis.tags.includes("Letter") || analysis.tags.includes("Recommendation")) {
+          determinedDocumentType = "Support Letter";
+        } else if (analysis.tags.includes("Publication")) {
+          determinedDocumentType = "Publication";
+        } else if (analysis.tags.includes("Award") || analysis.tags.includes("Certificate")) {
+          determinedDocumentType = "Award/Certificate";
+        }
 
         // Create new document with AI-suggested tags and criteria
         const newDoc: Document = {
@@ -216,6 +259,7 @@ const DocumentUploader = ({
           name: file.name,
           size: formatFileSize(file.size),
           type: file.type,
+          documentType: determinedDocumentType,
           tags: analysis.tags,
           criteria: analysis.criteria,
           uploadDate: new Date().toISOString().split("T")[0],
@@ -232,8 +276,25 @@ const DocumentUploader = ({
       if (onDocumentsChange) {
         onDocumentsChange(updatedDocuments);
       }
+
+      // Set feedback message
+      if (newDocuments.length > 0) {
+        if (lastFileSummary) {
+          setAnalysisFeedback(lastFileSummary);
+        } else {
+          setAnalysisFeedback("Files processed. Basic information extracted.");
+        }
+      }
+
     } catch (error) {
       console.error("Error analyzing documents:", error);
+      // For now, we'll use a general message.
+      // In a real scenario, we might inspect the error object to provide more specific messages.
+      if (error instanceof Error && error.message.includes("AI analysis")) { // Hypothetical check
+        setUploadError("Error analyzing document content. The file might be unsupported or corrupted.");
+      } else {
+        setUploadError("Could not process file. Please ensure it's a valid PDF, DOCX, JPG, or PNG file and not corrupted.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -352,6 +413,9 @@ const DocumentUploader = ({
             <p className="text-xs text-muted-foreground">
               Supported formats: PDF, DOCX, JPG, PNG (Max: 10MB)
             </p>
+            {uploadError && (
+              <p className="text-sm text-red-500 mt-2">{uploadError}</p>
+            )}
             {isAnalyzing && (
               <div className="flex items-center gap-2 text-sm text-primary">
                 <Sparkles className="h-4 w-4" />
@@ -362,6 +426,12 @@ const DocumentUploader = ({
             )}
           </div>
         </div>
+
+        {analysisFeedback && !uploadError && ( // Only show if no upload error
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
+            <p>{analysisFeedback}</p>
+          </div>
+        )}
 
         {/* Document List */}
         <Tabs defaultValue="all">
@@ -749,86 +819,45 @@ const DocumentUploader = ({
               </div>
 
               <div>
-                <h4 className="text-sm font-medium mb-2">Tags</h4>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedDocument.tags.map((tag, i) => (
-                    <Badge key={i} className="flex items-center gap-1">
-                      {tag}
-                      <button
-                        onClick={() => {
-                          const updatedTags = selectedDocument.tags.filter(
-                            (t) => t !== tag,
-                          );
-                          onTagDocument(selectedDocument.id, updatedTags);
-                          setSelectedDocument({
-                            ...selectedDocument,
-                            tags: updatedTags,
-                          });
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add tag..."
-                    className="flex-1"
-                    id="new-tag-input"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      const input = document.getElementById(
-                        "new-tag-input",
-                      ) as HTMLInputElement;
-                      if (input && input.value && selectedDocument) {
-                        const updatedTags = [
-                          ...selectedDocument.tags,
-                          input.value,
-                        ];
-                        onTagDocument(selectedDocument.id, updatedTags);
-                        setSelectedDocument({
-                          ...selectedDocument,
-                          tags: updatedTags,
-                        });
-                        input.value = "";
-                      }
-                    }}
-                  >
-                    Add
-                  </Button>
-                </div>
-                <div className="mt-2">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Suggested tags:
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {availableTags
-                      .filter((tag) => !selectedDocument.tags.includes(tag))
-                      .slice(0, 5)
-                      .map((tag, i) => (
-                        <Badge
-                          key={i}
-                          variant="outline"
-                          className="text-xs cursor-pointer hover:bg-secondary"
-                          onClick={() => {
-                            const updatedTags = [...selectedDocument.tags, tag];
-                            onTagDocument(selectedDocument.id, updatedTags);
-                            setSelectedDocument({
-                              ...selectedDocument,
-                              tags: updatedTags,
-                            });
-                          }}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                  </div>
-                </div>
+                <h4 className="text-sm font-medium mb-2">Document Type</h4>
+                <Select
+                  value={selectedDocument.documentType || ""} // Handle undefined case
+                  onValueChange={(value) => {
+                    if (selectedDocument) {
+                      setSelectedDocument({
+                        ...selectedDocument,
+                        documentType: value,
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select document type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIMARY_DOCUMENT_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
+              {/* Display AI Tags (read-only) - Optional, as per instructions, keeping it simple for now */}
+              {selectedDocument.tags && selectedDocument.tags.length > 0 && (
+                <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">AI Keywords</h4>
+                    <div className="flex flex-wrap gap-1">
+                        {selectedDocument.tags.map((tag, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                                {tag}
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+              )}
+              
               <div>
                 <h4 className="text-sm font-medium mb-2">Visa Criteria</h4>
                 <div className="flex flex-wrap gap-2 mb-2">
