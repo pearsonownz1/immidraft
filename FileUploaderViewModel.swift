@@ -87,6 +87,7 @@ class FileUploaderViewModel: ObservableObject {
     }
 
     // Function to upload all selected documents
+    // just to recompile when doing git push
     func uploadAllSelectedDocuments(userId: String) async {
         guard !selectedLocalFileURLs.isEmpty else {
             print("No files selected to upload.")
