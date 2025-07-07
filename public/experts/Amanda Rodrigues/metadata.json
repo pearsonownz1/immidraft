@@ -1,0 +1,16 @@
+{
+  "name": "Dr. Amanda Rodrigues",
+  "title": "Ph.D. in Bioinformatics",
+  "organization": "Rodrigues Research Institute",
+  "expertise": "Computational Biology",
+  "credentials": [
+    "Ph.D. in Bioinformatics from Stanford University",
+    "15+ years of experience in computational biology",
+    "Published 50+ peer-reviewed articles in leading scientific journals",
+    "Founder of the Rodrigues Research Institute"
+  ],
+  "contact": {
+    "email": "amanda.rodrigues@example.com",
+    "phone": "(555) 123-4567"
+  }
+}

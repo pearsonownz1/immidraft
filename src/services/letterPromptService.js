@@ -30,7 +30,7 @@ Here is a high-quality sample of an actual letter used for a successful ${visaTy
 ${sample.content}
 ===
 
-Now, using the following summarized evidence, write a new expert letter in the same format and tone:
+Now, using the following summarized evidence, write a COMPLETE expert letter in the same format and tone:
 
 ${this.formatEvidence(evidence)}
 
@@ -41,6 +41,9 @@ Important guidelines:
 4. Use formal, professional language appropriate for immigration purposes
 5. Focus on how the applicant meets the specific criteria for the ${visaType} visa category
 6. Include a clear conclusion that explicitly states your expert opinion on the applicant's qualifications
+7. IMPORTANT: Generate a COMPLETE letter with introduction, detailed body paragraphs, and conclusion
+8. The letter should be comprehensive (at least 1000 words) and include all sections of a formal expert opinion letter
+9. Do not truncate or abbreviate any section of the letter
 `;
   }
   
@@ -54,19 +57,25 @@ Important guidelines:
     return `
 You are writing an expert opinion letter for a ${visaType} visa petition.
 
-Using the following summarized evidence, write a professional expert opinion letter:
+Using the following summarized evidence, write a COMPLETE professional expert opinion letter:
 
 ${this.formatEvidence(evidence)}
 
-Your letter should include:
+Your letter MUST include:
 1. Introduction stating your qualifications as an expert
 2. Your relationship to the applicant (if any)
 3. Detailed assessment of the applicant's qualifications
 4. Specific examples from the evidence that demonstrate extraordinary ability
-5. Clear conclusion stating your expert opinion on the applicant's qualifications
-6. Professional closing
+5. Analysis of how the applicant meets each relevant criterion for the ${visaType} visa
+6. Clear conclusion stating your expert opinion on the applicant's qualifications
+7. Professional closing with signature block
 
-Use formal, professional language appropriate for immigration purposes.
+IMPORTANT REQUIREMENTS:
+- Generate a COMPLETE letter with all necessary sections
+- The letter should be comprehensive (at least 1000 words)
+- Include proper letterhead, date, and addressee
+- Use formal, professional language appropriate for immigration purposes
+- Do not truncate or abbreviate any section of the letter
 `;
   }
   
@@ -172,7 +181,7 @@ Here are ${limitedSamples.length} high-quality samples of actual letters used fo
     });
     
     prompt += `
-Now, using the following summarized evidence, write a new expert letter that incorporates the best elements from these samples:
+Now, using the following summarized evidence, write a COMPLETE expert letter that incorporates the best elements from these samples:
 
 ${this.formatEvidence(evidence)}
 
@@ -184,6 +193,9 @@ Important guidelines:
 5. Use formal, professional language appropriate for immigration purposes
 6. Focus on how the applicant meets the specific criteria for the ${visaType} visa category
 7. Include a clear conclusion that explicitly states your expert opinion on the applicant's qualifications
+8. IMPORTANT: Generate a COMPLETE letter with introduction, detailed body paragraphs, and conclusion
+9. The letter should be comprehensive (at least 1000 words) and include all sections of a formal expert opinion letter
+10. Do not truncate or abbreviate any section of the letter
 `;
     
     return prompt;

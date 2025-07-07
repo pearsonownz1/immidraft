@@ -224,11 +224,48 @@ export const aiService = {
       }
       
       // The API returns the generated content in the summary field
-      const generatedContent = data.summary || '';
+      let generatedContent = data.summary || '';
       
       // If the generated content is empty, log a warning
       if (!generatedContent) {
         console.warn('Generated content is empty. API response:', data);
+      }
+      
+      // Check if the generated content is too short or only contains an introduction
+      if (generatedContent.length < 500 || 
+          !generatedContent.toLowerCase().includes("conclusion") ||
+          !generatedContent.toLowerCase().includes("sincerely")) {
+        console.warn("Generated content appears incomplete. Requesting full letter.");
+        
+        // Modify the prompt to explicitly request a complete letter
+        const fullLetterPrompt = prompt + "\n\nIMPORTANT: Please generate a COMPLETE letter with introduction, detailed body paragraphs addressing all criteria, and conclusion. The letter should be at least 1000 words and include all sections of a formal expert opinion letter.";
+        
+        try {
+          // Make another API call with the enhanced prompt
+          const retryResponse = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              documentType: 'expert_letter',
+              documentName: `${visaType} Expert Letter for ${beneficiaryInfo.name || 'Beneficiary'}`,
+              documentText: fullLetterPrompt,
+              prompt: fullLetterPrompt
+            }),
+          });
+          
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            if (retryData.summary && retryData.summary.length > generatedContent.length) {
+              console.log('Successfully generated a more complete letter on retry');
+              generatedContent = retryData.summary;
+            }
+          }
+        } catch (retryError) {
+          console.error('Error in retry attempt for complete letter:', retryError);
+          // Continue with the original content if retry fails
+        }
       }
       
       // Create citations based on the documents

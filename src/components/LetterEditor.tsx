@@ -505,11 +505,46 @@ const LetterEditor = ({
                     : "Expert Opinion Letter"}
                 </h1>
                 <div className="prose prose-sm">
-                  {content.split("\n").map((paragraph, i) => (
-                    <p key={i} className="mb-4">
-                      {paragraph || <br />}
-                    </p>
-                  ))}
+                  {content.split("\n").map((paragraph, i) => {
+                    // Check if this paragraph contains a letterhead reference
+                    if (paragraph.startsWith("[LETTERHEAD:")) {
+                      const letterheadUrl = paragraph.match(/\[LETTERHEAD: (.*?)\]/)?.[1];
+                      return letterheadUrl ? (
+                        <div key={i} className="mb-6 text-center">
+                          <img 
+                            src={letterheadUrl} 
+                            alt="Expert Letterhead" 
+                            className="max-w-full h-auto mx-auto"
+                          />
+                        </div>
+                      ) : null;
+                    }
+                    
+                    // Check if this paragraph contains a signature reference
+                    if (paragraph.includes("[SIGNATURE:")) {
+                      const signatureUrl = paragraph.match(/\[SIGNATURE: (.*?)\]/)?.[1];
+                      return signatureUrl ? (
+                        <div key={i} className="my-6">
+                          <img 
+                            src={signatureUrl} 
+                            alt="Expert Signature" 
+                            className="h-16 object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <p key={i} className="mb-4">
+                          {paragraph.replace(/\[SIGNATURE: .*?\]/, "[Signature]") || <br />}
+                        </p>
+                      );
+                    }
+                    
+                    // Regular paragraph
+                    return (
+                      <p key={i} className="mb-4">
+                        {paragraph || <br />}
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
             </TabsContent>

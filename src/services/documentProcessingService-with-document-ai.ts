@@ -15,8 +15,11 @@ export const documentProcessingService = {
     try {
       console.log(`Processing document: ${documentId}, type: ${fileType}, name: ${fileName}`);
       
-      // Call the API endpoint to process the document
-      const response = await fetch('/api/process-document', {
+      // Get the base URL for the API
+      const baseUrl = window.location.origin;
+      
+      // Call the API endpoint to process the document with full URL
+      const response = await fetch(`${baseUrl}/api/process-document`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

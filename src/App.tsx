@@ -11,6 +11,9 @@ import LetterAI from "./pages/LetterAI";
 import TranslateAI from "./pages/TranslateAI";
 import EvalLetterAI from "./pages/EvalLetterAI";
 import VerifyAI from "./pages/VerifyAI";
+import DocumentSortingDemo from "./pages/DocumentSortingDemo";
+import ExpertSelectorTest from "./pages/ExpertSelectorTest";
+import ExpertLetterTest from "./pages/ExpertLetterTest";
 
 function App() {
   return (
@@ -32,6 +35,9 @@ function App() {
           <Route path="/translate-ai" element={<TranslateAI />} />
           <Route path="/eval-letter-ai" element={<EvalLetterAI />} />
           <Route path="/verify-ai" element={<VerifyAI />} />
+          <Route path="/document-sorting-demo" element={<DocumentSortingDemo />} />
+          <Route path="/expert-selector-test" element={<ExpertSelectorTest />} />
+          <Route path="/expert-letter-test" element={<ExpertLetterTest />} />
         </Route>
       </Routes>
     </Suspense>

@@ -171,6 +171,45 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
             </div>
           </Link>
           
+          <Link to="/document-sorting-demo">
+            <div
+              className={`flex items-center p-3 rounded-md ${
+                isActive("/document-sorting-demo")
+                  ? "bg-gray-100 text-primary font-medium"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <FileText className="h-5 w-5" />
+              {!isCollapsed && <span className="ml-3">Document Sorting Demo</span>}
+            </div>
+          </Link>
+          
+          <Link to="/expert-selector-test">
+            <div
+              className={`flex items-center p-3 rounded-md ${
+                isActive("/expert-selector-test")
+                  ? "bg-gray-100 text-primary font-medium"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <Users className="h-5 w-5" />
+              {!isCollapsed && <span className="ml-3">Expert Selector Test</span>}
+            </div>
+          </Link>
+          
+          <Link to="/expert-letter-test">
+            <div
+              className={`flex items-center p-3 rounded-md ${
+                isActive("/expert-letter-test")
+                  ? "bg-gray-100 text-primary font-medium"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <FileText className="h-5 w-5" />
+              {!isCollapsed && <span className="ml-3">Expert Letter Test</span>}
+            </div>
+          </Link>
+          
           {/* Divider after AI Tools */}
           <div className={`my-4 border-t border-gray-200 ${isCollapsed ? 'mx-2' : 'mx-0'}`}></div>
 

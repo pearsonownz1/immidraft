@@ -1,62 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { sampleLetterService } from '@/services/sampleLetterService';
+import React from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface VisaTypeSelectorProps {
   value: string;
-  onChange: (visaType: string) => void;
+  onChange: (value: string) => void;
   className?: string;
 }
 
-const VisaTypeSelector: React.FC<VisaTypeSelectorProps> = ({ 
-  value, 
+const VisaTypeSelector: React.FC<VisaTypeSelectorProps> = ({
+  value,
   onChange,
-  className = ''
+  className = "",
 }) => {
-  const [availableVisaTypes, setAvailableVisaTypes] = useState<string[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    // Get all samples and extract unique visa types
-    const samples = sampleLetterService.getAllSamples();
-    const uniqueVisaTypes = Array.from(new Set(
-      samples.map(sample => sample.visaType)
-    )).filter(Boolean);
-
-    // Add default visa types if they don't exist in samples
-    const defaultTypes = ['O-1A', 'EB-1A', 'EB-2 NIW'];
-    const allTypes = [...new Set([...uniqueVisaTypes, ...defaultTypes])];
-    
-    // Sort visa types
-    allTypes.sort();
-    
-    setAvailableVisaTypes(allTypes);
-    setLoading(false);
-  }, []);
+  const visaTypes = [
+    { value: "O-1A", label: "O-1A (Extraordinary Ability)" },
+    { value: "EB-1A", label: "EB-1A (Extraordinary Ability)" },
+    { value: "EB-2 NIW", label: "EB-2 NIW (National Interest Waiver)" },
+    { value: "H-1B", label: "H-1B (Specialty Occupation)" },
+    { value: "L-1A", label: "L-1A (Intracompany Transferee)" },
+    { value: "L-1B", label: "L-1B (Specialized Knowledge)" },
+  ];
 
   return (
-    <div className="relative">
-      <select
-        className={`px-3 py-2 border rounded-md text-sm ${className}`}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={loading}
-      >
-        {loading ? (
-          <option>Loading visa types...</option>
-        ) : (
-          availableVisaTypes.map((visaType) => (
-            <option key={visaType} value={visaType}>
-              {visaType} {sampleLetterService.getSamplesByVisaType(visaType).length > 0 ? '(Sample Available)' : ''}
-            </option>
-          ))
-        )}
-      </select>
-      {sampleLetterService.getSamplesByVisaType(value).length > 0 && (
-        <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs">✓</span>
-        </div>
-      )}
-    </div>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className={className}>
+        <SelectValue placeholder="Select visa type" />
+      </SelectTrigger>
+      <SelectContent>
+        {visaTypes.map((visaType) => (
+          <SelectItem key={visaType.value} value={visaType.value}>
+            {visaType.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 

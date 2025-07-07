@@ -93,11 +93,79 @@ class SampleLetterService {
    * @returns {Object} The best matching sample letter
    */
   getBestSampleForVisaType(visaType, tags = []) {
+    const normalizedType = this.normalizeVisaType(visaType);
+    console.log(`Looking for sample letters for visa type: ${visaType} (normalized: ${normalizedType})`);
+    
     const samples = this.getSamplesByVisaType(visaType);
     
     if (samples.length === 0) {
+      console.warn(`No exact matches found for visa type: ${visaType} (normalized: ${normalizedType})`);
+      
+      // If no exact match, try to find samples with similar visa types
+      const allSamples = this.getAllSamples();
+      
+      // First, try to find samples with the same visa category (e.g., EB or O)
+      let fallbackSamples = [];
+      
+      if (normalizedType.startsWith('EB')) {
+        console.log('Looking for any EB visa type samples as fallback');
+        fallbackSamples = allSamples.filter(sample => 
+          this.normalizeVisaType(sample.visaType).startsWith('EB')
+        );
+      } else if (normalizedType.startsWith('O')) {
+        console.log('Looking for any O visa type samples as fallback');
+        fallbackSamples = allSamples.filter(sample => 
+          this.normalizeVisaType(sample.visaType).startsWith('O')
+        );
+      } else if (normalizedType.startsWith('L')) {
+        console.log('Looking for any L visa type samples as fallback');
+        fallbackSamples = allSamples.filter(sample => 
+          this.normalizeVisaType(sample.visaType).startsWith('L')
+        );
+      } else if (normalizedType.startsWith('H')) {
+        console.log('Looking for any H visa type samples as fallback');
+        fallbackSamples = allSamples.filter(sample => 
+          this.normalizeVisaType(sample.visaType).startsWith('H')
+        );
+      }
+      
+      if (fallbackSamples.length > 0) {
+        console.log(`Found ${fallbackSamples.length} fallback samples with similar visa category`);
+        
+        // If we have tags, try to find the best match among fallback samples
+        if (tags && tags.length > 0) {
+          const scoredFallbacks = fallbackSamples.map(sample => {
+            let score = 0;
+            
+            // Score based on tag matches
+            if (sample.tags && Array.isArray(sample.tags)) {
+              tags.forEach(tag => {
+                if (sample.tags.includes(tag)) {
+                  score += 1;
+                }
+              });
+            }
+            
+            return { sample, score };
+          });
+          
+          // Sort by score (highest first)
+          scoredFallbacks.sort((a, b) => b.score - a.score);
+          
+          console.log(`Using best fallback sample: ${scoredFallbacks[0].sample.visaType}`);
+          return scoredFallbacks[0].sample;
+        }
+        
+        // If no tags, return the first fallback sample
+        console.log(`Using first fallback sample: ${fallbackSamples[0].visaType}`);
+        return fallbackSamples[0];
+      }
+      
+      console.warn('No fallback samples found. Returning null.');
       return null;
     }
+    
+    console.log(`Found ${samples.length} exact matches for visa type: ${visaType}`);
     
     // If no tags provided, return the first sample
     if (!tags || tags.length === 0) {

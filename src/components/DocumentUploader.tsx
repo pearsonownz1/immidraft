@@ -10,6 +10,10 @@ import {
   AlertCircle,
   CheckCircle2,
   BarChart2,
+  FolderDot,
+  MoveHorizontal,
+  Settings,
+  Save,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -27,6 +31,7 @@ import {
 } from "./ui/dialog";
 import { Progress } from "./ui/progress";
 import { aiService, AICriteriaAnalysis } from "../services/aiService";
+import { EnhancedDocumentSorter } from "./EnhancedDocumentSorter";
 
 interface Document {
   id: string;
@@ -37,6 +42,13 @@ interface Document {
   criteria: string[];
   uploadDate: string;
   preview?: string;
+  category?: string;
+}
+
+interface DocumentCategory {
+  id: string;
+  title: string;
+  icon: string;
 }
 
 interface DocumentUploaderProps {
@@ -60,6 +72,21 @@ export function DocumentUploader({
 }: DocumentUploaderProps) {
   const [documentsState, setDocumentsState] = useState<Document[]>(documents);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSorterOpen, setIsSorterOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadComplete, setUploadComplete] = useState<boolean>(false);
+  
+  // Document categories
+  const documentCategories: DocumentCategory[] = [
+    { id: "resume", title: "1 - Resume", icon: "user" },
+    { id: "degree", title: "2 - Degree & Diplomas", icon: "graduation-cap" },
+    { id: "license", title: "3 - License & Membership", icon: "id-card" },
+    { id: "employment", title: "4 - Employment Records", icon: "briefcase" },
+    { id: "support", title: "5 - Support Letters", icon: "envelope" },
+    { id: "recognition", title: "6 - Recognitions", icon: "award" },
+    { id: "media", title: "7 - Press Media", icon: "newspaper" }
+  ];
   
   // Update local state when documents prop changes
   useEffect(() => {
@@ -86,6 +113,10 @@ export function DocumentUploader({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            <Button variant="outline" onClick={() => setIsSorterOpen(true)}>
+              <FolderDot className="h-4 w-4 mr-2" />
+              Sort Documents
+            </Button>
             <Button variant="outline">
               <BarChart2 className="h-4 w-4 mr-2" />
               Analyze Coverage
@@ -133,15 +164,48 @@ export function DocumentUploader({
                 };
               });
               
-              // Update documents state
-              const updatedDocs = [...documentsState, ...newDocs];
+              // Check for duplicates and only add new files
+              const updatedDocs = [...documentsState];
+              
+              // Filter out duplicates based on file name
+              newDocs.forEach(newDoc => {
+                // Check if a document with the same name already exists
+                const isDuplicate = updatedDocs.some(existingDoc => 
+                  existingDoc.name === newDoc.name
+                );
+                
+                // Only add if it's not a duplicate
+                if (!isDuplicate) {
+                  updatedDocs.push(newDoc);
+                }
+              });
+              
               updateDocuments(updatedDocs);
               
-              // Call onUpload callback
-              onUpload(files);
+              // Simulate upload progress
+              setIsUploading(true);
+              setUploadProgress(0);
+              setUploadComplete(false);
               
-              // Show success message
-              alert(`Successfully uploaded ${files.length} file(s)`);
+              // Simulate upload progress with intervals
+              let progress = 0;
+              const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                  progress = 100;
+                  clearInterval(interval);
+                  
+                  // Call onUpload callback
+                  onUpload(files);
+                  
+                  // Show completion
+                  setUploadComplete(true);
+                  setTimeout(() => {
+                    setIsUploading(false);
+                  }, 2000);
+                }
+                setUploadProgress(progress);
+              }, 500);
             }
           }}
         >
@@ -184,18 +248,51 @@ export function DocumentUploader({
                       };
                     });
                     
-                    // Update documents state
-                    const updatedDocs = [...documentsState, ...newDocs];
-                    updateDocuments(updatedDocs);
+                    // Check for duplicates and only add new files
+                    const updatedDocs = [...documentsState];
                     
-                    // Call onUpload callback
-                    onUpload(files);
+                    // Filter out duplicates based on file name
+                    newDocs.forEach(newDoc => {
+                      // Check if a document with the same name already exists
+                      const isDuplicate = updatedDocs.some(existingDoc => 
+                        existingDoc.name === newDoc.name
+                      );
+                      
+                      // Only add if it's not a duplicate
+                      if (!isDuplicate) {
+                        updatedDocs.push(newDoc);
+                      }
+                    });
+                    
+                    updateDocuments(updatedDocs);
                     
                     // Reset the file input
                     e.target.value = '';
                     
-                    // Show success message
-                    alert(`Successfully uploaded ${files.length} file(s)`);
+                    // Simulate upload progress
+                    setIsUploading(true);
+                    setUploadProgress(0);
+                    setUploadComplete(false);
+                    
+                    // Simulate upload progress with intervals
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                      progress += Math.random() * 15;
+                      if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        
+                        // Call onUpload callback
+                        onUpload(files);
+                        
+                        // Show completion
+                        setUploadComplete(true);
+                        setTimeout(() => {
+                          setIsUploading(false);
+                        }, 2000);
+                      }
+                      setUploadProgress(progress);
+                    }, 500);
                   }
                 }}
               />
@@ -203,12 +300,35 @@ export function DocumentUploader({
           </div>
         </div>
         
+        {/* Upload Progress */}
+        {isUploading && (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                {uploadComplete ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
+                ) : (
+                  <Loader2 className="h-5 w-5 text-primary mr-2 animate-spin" />
+                )}
+                <span className="font-medium">
+                  {uploadComplete ? "Upload Complete!" : "Uploading documents..."}
+                </span>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                {Math.round(uploadProgress)}%
+              </span>
+            </div>
+            <Progress value={uploadProgress} className="h-2" />
+          </div>
+        )}
+        
         {/* Document List */}
         <Tabs defaultValue="all">
           <TabsList className="mb-6">
             <TabsTrigger value="all">
               All Documents ({documentsState.length})
             </TabsTrigger>
+            <TabsTrigger value="by-category">By Category</TabsTrigger>
             <TabsTrigger value="tagged">Tagged</TabsTrigger>
             <TabsTrigger value="untagged">Untagged</TabsTrigger>
             <TabsTrigger value="coverage">Criteria Coverage</TabsTrigger>
@@ -243,6 +363,14 @@ export function DocumentUploader({
                           </h4>
                           <p className="text-xs text-muted-foreground">
                             {doc.size} • {doc.uploadDate}
+                            {doc.category && (
+                              <>
+                                <span className="mx-1">•</span>
+                                <span className="text-blue-500">
+                                  {documentCategories.find(c => c.id === doc.category)?.title || doc.category}
+                                </span>
+                              </>
+                            )}
                           </p>
                         </div>
                         <Button
@@ -267,6 +395,131 @@ export function DocumentUploader({
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          
+          <TabsContent value="by-category" className="space-y-6">
+            <ScrollArea className="h-[400px] pr-6">
+              <div className="space-y-8">
+                {/* Group documents by category */}
+                {documentCategories.map((category) => {
+                  const categoryDocs = documentsState.filter(doc => doc.category === category.id);
+                  if (categoryDocs.length === 0) return null;
+                  
+                  return (
+                    <div key={category.id} className="space-y-4">
+                      <div className="flex items-center">
+                        <FolderDot className="h-5 w-5 text-blue-500 mr-2" />
+                        <h3 className="font-medium">{category.title}</h3>
+                        <Badge variant="outline" className="ml-2">
+                          {categoryDocs.length}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {categoryDocs.map((doc) => (
+                          <Card key={doc.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                            <div className="relative h-24 bg-muted">
+                              {doc.preview ? (
+                                <img
+                                  src={doc.preview}
+                                  alt={doc.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <FileText className="h-10 w-10 text-muted-foreground/50" />
+                                </div>
+                              )}
+                            </div>
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4
+                                    className="font-medium text-sm truncate"
+                                    title={doc.name}
+                                  >
+                                    {doc.name}
+                                  </h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    {doc.size} • {doc.uploadDate}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* Uncategorized documents */}
+                {(() => {
+                  const uncategorizedDocs = documentsState.filter(doc => !doc.category);
+                  if (uncategorizedDocs.length === 0) return null;
+                  
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex items-center">
+                        <FolderDot className="h-5 w-5 text-gray-500 mr-2" />
+                        <h3 className="font-medium">Uncategorized</h3>
+                        <Badge variant="outline" className="ml-2">
+                          {uncategorizedDocs.length}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {uncategorizedDocs.map((doc) => (
+                          <Card key={doc.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                            <div className="relative h-24 bg-muted">
+                              {doc.preview ? (
+                                <img
+                                  src={doc.preview}
+                                  alt={doc.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <FileText className="h-10 w-10 text-muted-foreground/50" />
+                                </div>
+                              )}
+                            </div>
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4
+                                    className="font-medium text-sm truncate"
+                                    title={doc.name}
+                                  >
+                                    {doc.name}
+                                  </h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    {doc.size} • {doc.uploadDate}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+                
+                {/* No documents message */}
+                {documentsState.length === 0 && (
+                  <div className="flex items-center justify-center h-40">
+                    <div className="text-center">
+                      <FileText className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                      <p className="text-muted-foreground">No documents found</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Upload documents to get started
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </TabsContent>
@@ -296,6 +549,43 @@ export function DocumentUploader({
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Enhanced Document Sorter Modal */}
+      <EnhancedDocumentSorter
+        isOpen={isSorterOpen}
+        onClose={() => setIsSorterOpen(false)}
+        documents={documentsState.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          type: doc.type,
+          size: doc.size,
+          uploadDate: doc.uploadDate,
+          category: doc.category
+        }))}
+        categories={documentCategories.map(cat => ({
+          id: cat.id,
+          title: cat.title,
+          icon: cat.icon
+        }))}
+        onSaveCategories={(sortedDocuments) => {
+          // Map the sorted documents back to our Document type
+          const updatedDocuments = documentsState.map(doc => {
+            // Find the corresponding document in sortedDocuments
+            const sortedDoc = sortedDocuments.find(sorted => sorted.id === doc.id);
+            if (sortedDoc) {
+              // Update the category
+              return {
+                ...doc,
+                category: sortedDoc.category
+              };
+            }
+            return doc;
+          });
+          
+          updateDocuments(updatedDocuments);
+          setIsSorterOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DocumentCategorySorter } from "@/components/DocumentCategorySorter";
 import {
   FileText,
   Edit,
@@ -22,6 +23,7 @@ import {
   BookOpen,
   Link2,
   Save,
+  FolderDot,
 } from "lucide-react";
 
 interface ExpertLetterDraftingViewProps {
@@ -55,8 +57,11 @@ const ExpertLetterDraftingView: React.FC<ExpertLetterDraftingViewProps> = ({
     "letter-kurier",
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [caseData, setCaseData] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [isDocumentSorterOpen, setIsDocumentSorterOpen] = useState(false);
 
   // Document categories based on the user's request
   const documentCategories = [
@@ -167,6 +172,9 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
     if (!caseData) return;
     
     setIsLoading(true);
+    setLoadingProgress(10);
+    setLoadingMessage('Preparing documents and expert data...');
+    
     try {
       const beneficiaryInfo = {
         name: `${caseData.client_first_name} ${caseData.client_last_name}`,
@@ -184,7 +192,14 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
           : undefined
       }));
       
+      setLoadingProgress(30);
+      setLoadingMessage('Analyzing documents and criteria...');
+      
       console.log('Generating draft with enhanced documents:', enhancedDocuments);
+      console.log('Using visa type:', caseData.visa_type || "O-1A");
+      
+      setLoadingProgress(50);
+      setLoadingMessage('Generating complete expert letter...');
       
       const result = await aiService.draftExpertLetter(
         caseData.visa_type || "O-1A",
@@ -193,30 +208,61 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
         enhancedDocuments
       );
       
+      setLoadingProgress(90);
+      setLoadingMessage('Finalizing letter format...');
+      
       setDraft(result.content);
+      
+      setLoadingProgress(100);
+      setLoadingMessage('Complete!');
     } catch (error) {
       console.error('Error generating draft with AI:', error);
+      setLoadingMessage('Error generating letter. Please try again.');
     } finally {
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsLoading(false);
+        setLoadingProgress(0);
+        setLoadingMessage('');
+      }, 500);
     }
   };
 
   const improveWithAI = async () => {
     setIsLoading(true);
+    setLoadingProgress(20);
+    setLoadingMessage('Analyzing current letter...');
+    
     try {
+      setLoadingProgress(40);
+      setLoadingMessage('Improving language and structure...');
+      
       const improvedDraft = await aiService.refineLetter(
         draft,
         "Make this letter more persuasive and professional. Improve the language and structure."
       );
+      
+      setLoadingProgress(80);
+      setLoadingMessage('Finalizing improvements...');
+      
       setDraft(improvedDraft);
+      
+      setLoadingProgress(100);
+      setLoadingMessage('Improvements complete!');
     } catch (error) {
       console.error('Error improving draft with AI:', error);
+      setLoadingMessage('Error improving letter. Please try again.');
     } finally {
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsLoading(false);
+        setLoadingProgress(0);
+        setLoadingMessage('');
+      }, 500);
     }
   };
 
   const regenerateWithAI = async () => {
+    // Simply call the generateDraftWithAI function which already has progress indicators
+    setLoadingMessage('Regenerating complete letter...');
     generateDraftWithAI();
   };
 
@@ -235,16 +281,37 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
     alert("Draft saved successfully");
   };
   
+  // Handle saving categorized documents from the document sorter
+  const handleSaveCategories = (sortedDocuments: any[]) => {
+    // Update the documents state with the sorted documents
+    setDocuments(sortedDocuments);
+    
+    // In a real implementation, you would save the updated categories to the database
+    console.log('Documents sorted into categories:', sortedDocuments);
+  };
+  
   const insertEvidenceReference = useCallback(async (id: string) => {
     const evidence = documents.find((item) => item.id === id);
     if (!evidence) return;
     
     setIsLoading(true);
+    setLoadingProgress(30);
+    setLoadingMessage(`Generating citation for "${evidence.title}"...`);
+    
     try {
+      setLoadingProgress(60);
       const citation = await aiService.generateCitation(evidence, draft);
+      
+      setLoadingProgress(90);
+      setLoadingMessage('Inserting citation into letter...');
+      
       setDraft(draft + "\n\n" + citation);
+      
+      setLoadingProgress(100);
+      setLoadingMessage('Citation added successfully!');
     } catch (error) {
       console.error('Error generating citation:', error);
+      setLoadingMessage('Error generating citation. Using fallback method...');
       
       // Fallback to the original implementation
       let referenceText = "";
@@ -270,7 +337,11 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
       
       setDraft(draft + `\n\nAs evidenced by ${referenceText}, the beneficiary has demonstrated extraordinary ability in the field.`);
     } finally {
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsLoading(false);
+        setLoadingProgress(0);
+        setLoadingMessage('');
+      }, 500);
     }
   }, [draft, documents]);
 
@@ -282,10 +353,14 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
           <div className="flex items-center">
             <h1 className="text-2xl font-bold mr-3">Expert Letter Drafting</h1>
             <Badge variant="outline" className="text-sm font-medium">
-              O-1A Visa
+              {caseData?.visa_type || "O-1A Visa"}
             </Badge>
           </div>
           <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={() => setIsDocumentSorterOpen(true)}>
+              <FolderDot className="h-4 w-4 mr-2" />
+              Sort Documents
+            </Button>
             <Button variant="outline" size="sm" onClick={saveDraft}>
               <Save className="h-4 w-4 mr-2" />
               Save Draft
@@ -360,11 +435,11 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm" onClick={regenerateWithAI}>
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Regenerate
+                    Generate Complete Letter
                   </Button>
                   <Button variant="outline" size="sm" onClick={improveWithAI}>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Improve Draft
+                    Enhance Draft
                   </Button>
                 </div>
               </div>
@@ -373,7 +448,13 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
                   <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
                     <div className="flex flex-col items-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                      <p className="mt-4 text-gray-500">Processing with AI...</p>
+                      <p className="mt-4 text-gray-500">{loadingMessage || 'Processing with AI...'}</p>
+                      <div className="w-64 h-2 bg-gray-200 rounded-full mt-4">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all duration-300" 
+                          style={{ width: `${loadingProgress}%` }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -471,10 +552,42 @@ Additionally, a recommendation letter from Lukas Kurier underscores Mr. Moyer's 
           </div>
           <Button variant="default" size="sm" onClick={improveWithAI}>
             <Sparkles className="h-4 w-4 mr-2" />
-            Ask AI to Improve Draft
+            Enhance Complete Letter
           </Button>
         </div>
       </footer>
+      
+      {/* Document Category Sorter Modal */}
+      <DocumentCategorySorter
+        isOpen={isDocumentSorterOpen}
+        onClose={() => setIsDocumentSorterOpen(false)}
+        documents={documents.map(doc => ({
+          id: doc.id,
+          name: doc.title,
+          type: doc.type,
+          size: doc.originalDoc?.size || '',
+          uploadDate: doc.originalDoc?.uploadDate || '',
+          category: doc.category
+        }))}
+        categories={documentCategories}
+        onSaveCategories={(sortedDocuments) => {
+          // Map the sorted documents back to our evidence format
+          const updatedDocuments = documents.map(doc => {
+            // Find the corresponding document in sortedDocuments
+            const sortedDoc = sortedDocuments.find(sorted => sorted.id === doc.id);
+            if (sortedDoc) {
+              // Update the category
+              return {
+                ...doc,
+                category: sortedDoc.category
+              };
+            }
+            return doc;
+          });
+          
+          handleSaveCategories(updatedDocuments);
+        }}
+      />
     </div>
   );
 };
