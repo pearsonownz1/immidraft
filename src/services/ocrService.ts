@@ -69,7 +69,7 @@ class OCRService {
   }
 
   /**
-   * Process document using PaddleOCR with fallback to mock data
+   * Process document using PaddleOCR
    */
   async processDocument(file: File): Promise<OCRResult[]> {
     const formData = new FormData();
@@ -82,64 +82,19 @@ class OCRService {
       });
 
       if (!response.ok) {
-        console.warn('OCR API failed, using fallback mock data');
-        return this.generateMockOCRResults(file);
+        throw new Error(`OCR processing failed: ${response.statusText}`);
       }
 
       const result = await response.json();
       return result.ocrResults || [];
     } catch (error) {
-      console.warn('OCR processing error, using fallback:', error);
-      return this.generateMockOCRResults(file);
+      console.error('OCR processing error:', error);
+      throw error;
     }
   }
 
   /**
-   * Generate realistic mock OCR results for demonstration
-   */
-  private generateMockOCRResults(file: File): OCRResult[] {
-    const fileName = file.name.toLowerCase();
-    
-    // Generate different mock data based on file name patterns
-    if (fileName.includes('transcript') || fileName.includes('academic')) {
-      return [
-        { text: 'UNIVERSITY OF CALIFORNIA', confidence: 95, bbox: [100, 50, 400, 80], type: 'header' },
-        { text: 'OFFICIAL TRANSCRIPT', confidence: 98, bbox: [150, 90, 350, 120], type: 'header' },
-        { text: 'Student Name: John Smith', confidence: 92, bbox: [50, 150, 250, 170], type: 'text' },
-        { text: 'Student ID: 12345678', confidence: 94, bbox: [50, 180, 200, 200], type: 'text' },
-        { text: 'Degree: Bachelor of Science', confidence: 90, bbox: [50, 210, 250, 230], type: 'text' },
-        { text: 'Major: Computer Science', confidence: 93, bbox: [50, 240, 220, 260], type: 'text' },
-        { text: 'GPA: 3.75', confidence: 96, bbox: [50, 270, 150, 290], type: 'text' },
-        { text: 'Course Code', confidence: 88, bbox: [50, 320, 150, 340], type: 'table' },
-        { text: 'Course Name', confidence: 89, bbox: [160, 320, 300, 340], type: 'table' },
-        { text: 'Credits', confidence: 91, bbox: [310, 320, 380, 340], type: 'table' },
-        { text: 'Grade', confidence: 93, bbox: [390, 320, 450, 340], type: 'table' },
-        { text: 'CS101', confidence: 87, bbox: [50, 350, 150, 370], type: 'cell' },
-        { text: 'Introduction to Programming', confidence: 85, bbox: [160, 350, 300, 370], type: 'cell' },
-        { text: '3', confidence: 92, bbox: [310, 350, 380, 370], type: 'cell' },
-        { text: 'A', confidence: 94, bbox: [390, 350, 450, 370], type: 'cell' },
-        { text: 'CS201', confidence: 88, bbox: [50, 380, 150, 400], type: 'cell' },
-        { text: 'Data Structures', confidence: 86, bbox: [160, 380, 300, 400], type: 'cell' },
-        { text: '4', confidence: 91, bbox: [310, 380, 380, 400], type: 'cell' },
-        { text: 'B+', confidence: 89, bbox: [390, 380, 450, 400], type: 'cell' },
-        { text: 'MATH201', confidence: 87, bbox: [50, 410, 150, 430], type: 'cell' },
-        { text: 'Calculus II', confidence: 84, bbox: [160, 410, 300, 430], type: 'cell' },
-        { text: '4', confidence: 90, bbox: [310, 410, 380, 430], type: 'cell' },
-        { text: 'A-', confidence: 92, bbox: [390, 410, 450, 430], type: 'cell' },
-      ];
-    }
-    
-    // Default mock data for any file
-    return [
-      { text: 'ACADEMIC INSTITUTION', confidence: 90, bbox: [100, 50, 300, 80], type: 'header' },
-      { text: 'Student: Jane Doe', confidence: 88, bbox: [50, 120, 200, 140], type: 'text' },
-      { text: 'Program: Bachelor of Arts', confidence: 85, bbox: [50, 150, 250, 170], type: 'text' },
-      { text: 'GPA: 3.50', confidence: 92, bbox: [50, 180, 150, 200], type: 'text' },
-    ];
-  }
-
-  /**
-   * Extract structured data from OCR results with fallback
+   * Extract structured data from OCR results
    */
   async extractTranscriptData(ocrResults: OCRResult[]): Promise<TranscriptData> {
     try {
@@ -153,96 +108,14 @@ class OCRService {
       });
 
       if (!response.ok) {
-        console.warn('Transcript parsing API failed, using fallback parsing');
-        return this.generateMockTranscriptData(ocrResults);
+        throw new Error(`Transcript parsing failed: ${response.statusText}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.warn('Transcript parsing error, using fallback:', error);
-      return this.generateMockTranscriptData(ocrResults);
+      console.error('Transcript parsing error:', error);
+      throw error;
     }
-  }
-
-  /**
-   * Generate mock transcript data from OCR results
-   */
-  private generateMockTranscriptData(ocrResults: OCRResult[]): TranscriptData {
-    // Extract basic info from OCR results
-    const allText = ocrResults.map(r => r.text).join(' ');
-    
-    // Try to extract student name
-    let firstName = 'John';
-    let lastName = 'Smith';
-    const nameMatch = allText.match(/Student Name:\s*([A-Za-z]+)\s+([A-Za-z]+)/i) || 
-                     allText.match(/Student:\s*([A-Za-z]+)\s+([A-Za-z]+)/i);
-    if (nameMatch) {
-      firstName = nameMatch[1];
-      lastName = nameMatch[2];
-    }
-
-    // Try to extract institution
-    let institutionName = 'University of California';
-    const institutionMatch = allText.match(/(University|College|Institute|School)\s+of\s+[A-Za-z\s]+/i);
-    if (institutionMatch) {
-      institutionName = institutionMatch[0];
-    }
-
-    // Try to extract GPA
-    let gpa = 3.75;
-    const gpaMatch = allText.match(/GPA:\s*([0-9.]+)/i);
-    if (gpaMatch) {
-      gpa = parseFloat(gpaMatch[1]);
-    }
-
-    // Generate courses from table data
-    const courses = [];
-    const coursePattern = /([A-Z]{2,4}[0-9]{3})\s+([A-Za-z\s]+)\s+([0-9])\s+([A-F][+-]?)/g;
-    let match;
-    while ((match = coursePattern.exec(allText)) !== null) {
-      courses.push({
-        courseCode: match[1],
-        courseName: match[2].trim(),
-        credits: parseInt(match[3]),
-        grade: match[4],
-        semester: 'Fall',
-        year: 2023
-      });
-    }
-
-    // If no courses found, add some defaults
-    if (courses.length === 0) {
-      courses.push(
-        { courseCode: 'CS101', courseName: 'Introduction to Programming', credits: 3, grade: 'A', semester: 'Fall', year: 2023 },
-        { courseCode: 'CS201', courseName: 'Data Structures', credits: 4, grade: 'B+', semester: 'Spring', year: 2024 },
-        { courseCode: 'MATH201', courseName: 'Calculus II', credits: 4, grade: 'A-', semester: 'Fall', year: 2023 }
-      );
-    }
-
-    return {
-      studentInfo: {
-        firstName,
-        lastName,
-        studentId: '12345678'
-      },
-      institutionInfo: {
-        name: institutionName,
-        address: 'Berkeley, CA'
-      },
-      academicInfo: {
-        degreeName: 'Bachelor of Science',
-        degreeLevel: 'Bachelor',
-        major: 'Computer Science',
-        gpa,
-        graduationDate: '2024-05-15'
-      },
-      courses,
-      metadata: {
-        ocrConfidence: Math.round(ocrResults.reduce((sum, r) => sum + r.confidence, 0) / ocrResults.length),
-        processingDate: new Date().toISOString(),
-        documentType: 'Academic Transcript'
-      }
-    };
   }
 
   /**

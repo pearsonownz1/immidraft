@@ -1,23 +1,36 @@
+import { NextApiRequest, NextApiResponse } from 'next';
+import formidable from 'formidable';
+import fs from 'fs';
+
 // Real PaddleOCR API endpoint with table detection
-export default async function handler(req: any, res: any) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const formData = await req.formData();
-    const file = formData.get('document') as File;
+    // Parse the multipart form data
+    const form = formidable({
+      uploadDir: '/tmp',
+      keepExtensions: true,
+      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+    });
+
+    const [fields, files] = await form.parse(req);
+    const file = Array.isArray(files.document) ? files.document[0] : files.document;
     
     if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Convert file to buffer for processing
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
+    // Read file buffer
+    const buffer = fs.readFileSync(file.filepath);
+    
     // Call PaddleOCR service (this would be your actual PaddleOCR integration)
-    const ocrResults = await processPaddleOCR(buffer, file.name);
+    const ocrResults = await processPaddleOCR(buffer, file.originalFilename || 'document');
+
+    // Clean up temporary file
+    fs.unlinkSync(file.filepath);
 
     res.status(200).json({
       success: true,
@@ -25,7 +38,7 @@ export default async function handler(req: any, res: any) {
       tableResults: ocrResults.tableResults,
       layoutResults: ocrResults.layoutResults,
       metadata: {
-        filename: file.name,
+        filename: file.originalFilename,
         size: file.size,
         processingTime: Date.now(),
         confidence: ocrResults.averageConfidence
