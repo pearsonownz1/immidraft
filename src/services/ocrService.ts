@@ -2,6 +2,28 @@ interface OCRResult {
   text: string;
   confidence: number;
   bbox: [number, number, number, number];
+  type?: 'text' | 'table' | 'header' | 'cell';
+  tableInfo?: {
+    rowIndex: number;
+    colIndex: number;
+    rowSpan: number;
+    colSpan: number;
+  };
+}
+
+interface TableStructure {
+  rows: number;
+  cols: number;
+  cells: Array<{
+    text: string;
+    confidence: number;
+    bbox: [number, number, number, number];
+    rowIndex: number;
+    colIndex: number;
+    rowSpan: number;
+    colSpan: number;
+  }>;
+  headers: string[];
 }
 
 interface TranscriptData {

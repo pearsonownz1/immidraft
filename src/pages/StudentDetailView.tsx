@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Copy, Download, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import InteractiveDocumentViewer from '../components/InteractiveDocumentViewer';
+import { OCRResult } from '../services/ocrService';
 
 interface CourseGrade {
   courseCode: string;
@@ -48,6 +50,8 @@ const StudentDetailView: React.FC = () => {
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
+  const [documentUrl, setDocumentUrl] = useState<string>('');
 
   // Mock data - replace with actual API call
   useEffect(() => {
@@ -130,8 +134,89 @@ const StudentDetailView: React.FC = () => {
       ]
     };
 
+    // Mock OCR results with table structure
+    const mockOCRResults: OCRResult[] = [
+      {
+        text: "Amrita Vishwa Vidyapeetham University",
+        confidence: 0.95,
+        bbox: [100, 50, 400, 80],
+        type: 'header'
+      },
+      {
+        text: "Academic Transcript",
+        confidence: 0.92,
+        bbox: [100, 90, 300, 120],
+        type: 'header'
+      },
+      {
+        text: "Student Name: Demo Sample STUDENT",
+        confidence: 0.94,
+        bbox: [50, 150, 350, 170],
+        type: 'text'
+      },
+      {
+        text: "Course Code",
+        confidence: 0.93,
+        bbox: [50, 200, 150, 220],
+        type: 'cell',
+        tableInfo: { rowIndex: 0, colIndex: 0, rowSpan: 1, colSpan: 1 }
+      },
+      {
+        text: "Course Name",
+        confidence: 0.91,
+        bbox: [150, 200, 350, 220],
+        type: 'cell',
+        tableInfo: { rowIndex: 0, colIndex: 1, rowSpan: 1, colSpan: 1 }
+      },
+      {
+        text: "Credits",
+        confidence: 0.89,
+        bbox: [350, 200, 400, 220],
+        type: 'cell',
+        tableInfo: { rowIndex: 0, colIndex: 2, rowSpan: 1, colSpan: 1 }
+      },
+      {
+        text: "Grade",
+        confidence: 0.92,
+        bbox: [400, 200, 450, 220],
+        type: 'cell',
+        tableInfo: { rowIndex: 0, colIndex: 3, rowSpan: 1, colSpan: 1 }
+      },
+      {
+        text: "HU15",
+        confidence: 0.87,
+        bbox: [50, 230, 150, 250],
+        type: 'cell',
+        tableInfo: { rowIndex: 1, colIndex: 0, rowSpan: 1, colSpan: 1 }
+      },
+      {
+        text: "Communicative English",
+        confidence: 0.85,
+        bbox: [150, 230, 350, 250],
+        type: 'cell',
+        tableInfo: { rowIndex: 1, colIndex: 1, rowSpan: 1, colSpan: 1 }
+      },
+      {
+        text: "3.0",
+        confidence: 0.96,
+        bbox: [350, 230, 400, 250],
+        type: 'cell',
+        tableInfo: { rowIndex: 1, colIndex: 2, rowSpan: 1, colSpan: 1 }
+      },
+      {
+        text: "B",
+        confidence: 0.92,
+        bbox: [400, 230, 450, 250],
+        type: 'cell',
+        tableInfo: { rowIndex: 1, colIndex: 3, rowSpan: 1, colSpan: 1 }
+      }
+    ];
+
     setTimeout(() => {
       setStudentData(mockStudentData);
+      setOcrResults(mockOCRResults);
+      // Create a mock document URL (in real app, this would come from the uploaded file)
+      setDocumentUrl('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNTAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjI1MCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2YjczODAiPkRvY3VtZW50IFByZXZpZXc8L3RleHQ+PC9zdmc+');
       setLoading(false);
     }, 1000);
   }, [studentId]);
@@ -224,28 +309,20 @@ const StudentDetailView: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Document Preview */}
+          {/* Left Column - Interactive Document Viewer */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Data Extraction Review</span>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <span>OCR avg. confidence: {studentData.ocrConfidence}%</span>
-                    <span>•</span>
-                    <span>MyDocs ID: {studentData.myDocsId}</span>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-100 rounded-lg p-4 h-96 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    <p>Loading document preview...</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <InteractiveDocumentViewer
+              documentUrl={documentUrl}
+              ocrResults={ocrResults}
+              onBoundingBoxClick={(result) => {
+                console.log('Clicked OCR result:', result);
+              }}
+              onTextEdit={(index, newText) => {
+                const updatedResults = [...ocrResults];
+                updatedResults[index].text = newText;
+                setOcrResults(updatedResults);
+              }}
+            />
           </div>
 
           {/* Right Column - Extracted Data */}
