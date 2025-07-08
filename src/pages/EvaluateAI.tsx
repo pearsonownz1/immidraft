@@ -4,8 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Upload, Search, Filter, Eye, FileText, Download } from 'lucide-react';
+import { Upload, Search, Filter, Eye, FileText, Download, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import TranscriptUploader from '../components/TranscriptUploader';
+import { TranscriptData } from '../services/ocrService';
 
 interface StudentRecord {
   id: string;
@@ -28,6 +30,8 @@ const EvaluateAI: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [showUploader, setShowUploader] = useState(false);
+  const [processingFiles, setProcessingFiles] = useState<string[]>([]);
 
   // Mock data - replace with actual API call
   useEffect(() => {
@@ -144,6 +148,33 @@ const EvaluateAI: React.FC = () => {
     navigate(`/evaluate-ai/student/${studentId}`);
   };
 
+  const handleTranscriptProcessed = (transcriptData: TranscriptData) => {
+    // Create a new student record from the processed transcript
+    const newStudent: StudentRecord = {
+      id: Date.now().toString(),
+      taskLink: new Date().toLocaleTimeString(),
+      uploaded: new Date().toLocaleTimeString(),
+      source: 'Upload',
+      country: transcriptData.institutionInfo.address?.includes('USA') ? 'United States' : 'Unknown',
+      institution: transcriptData.institutionInfo.name,
+      studentName: `${transcriptData.studentInfo.firstName} ${transcriptData.studentInfo.lastName}`,
+      educationLevel: transcriptData.academicInfo.degreeLevel,
+      gpa: transcriptData.academicInfo.gpa?.toFixed(2) || '---',
+      credits: transcriptData.courses.reduce((sum, course) => sum + course.credits, 0).toString(),
+      status: 'Completed',
+      edited: '---'
+    };
+
+    // Add to the beginning of the students list
+    setStudents(prev => [newStudent, ...prev]);
+    setShowUploader(false);
+  };
+
+  const handleUploadError = (error: string) => {
+    console.error('Upload error:', error);
+    // You could show a toast notification here
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -198,9 +229,12 @@ const EvaluateAI: React.FC = () => {
             <div className="text-sm text-gray-600">
               Drag and drop files below to scan your transcript.
             </div>
-            <Button className="flex items-center space-x-2">
-              <Upload className="h-4 w-4" />
-              <span>Upload</span>
+            <Button 
+              onClick={() => setShowUploader(true)}
+              className="flex items-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add New Transcript</span>
             </Button>
           </div>
         </div>
@@ -274,6 +308,29 @@ const EvaluateAI: React.FC = () => {
           <p className="mt-1">© 2024 by ImmiDraft Inc.</p>
         </div>
       </div>
+
+      {/* Upload Modal */}
+      {showUploader && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Upload New Transcript</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowUploader(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </Button>
+            </div>
+            <TranscriptUploader
+              onUploadComplete={handleTranscriptProcessed}
+              onUploadError={handleUploadError}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
