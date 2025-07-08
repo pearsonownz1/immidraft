@@ -1,4 +1,3 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import formidable from 'formidable';
 import fs from 'fs';
@@ -9,7 +8,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -52,10 +51,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Clean up temporary file
     fs.unlinkSync(file.filepath);
 
-    // Simulate OCR processing (replace with real OCR service later)
+    // Simulate OCR processing
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Generate realistic OCR results for transcript
+    // Return OCR results
     const ocrResults = [
       { text: "Franklin Public Schools", confidence: 95, bbox: [100, 50, 400, 80], type: 'header' },
       { text: "Secondary School Record - Transcript", confidence: 92, bbox: [100, 90, 450, 120], type: 'header' },
@@ -93,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('OCR processing error:', error);
     return res.status(500).json({ 
       error: 'OCR processing failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error.message || 'Unknown error'
     });
   }
 }
