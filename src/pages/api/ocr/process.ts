@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import formidable from 'formidable';
 import fs from 'fs';
 
@@ -7,6 +8,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Initialize Supabase client with error handling
+    let supabase;
+    try {
+      supabase = createClient(
+        process.env.SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+      );
+    } catch (supabaseError) {
+      console.error('Supabase initialization error:', supabaseError);
+      return res.status(500).json({ 
+        error: 'Storage service unavailable',
+        details: 'Supabase configuration error'
+      });
+    }
+
     // Parse the multipart form data
     const form = formidable({
       uploadDir: '/tmp',
@@ -21,8 +37,37 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Clean up temporary file immediately (skip Supabase upload due to SSL issues)
+    // Read file buffer
+    const buffer = fs.readFileSync(file.filepath);
+    const fileName = `transcript_${Date.now()}_${file.originalFilename}`;
+
+    // Try to upload to Supabase 'documents' bucket with SSL error handling
+    let uploadData = null;
+    let uploadError = null;
+    
+    try {
+      const result = await supabase.storage
+        .from('documents')
+        .upload(fileName, buffer, {
+          contentType: file.mimetype || 'application/octet-stream',
+          upsert: false
+        });
+      
+      uploadData = result.data;
+      uploadError = result.error;
+    } catch (sslError) {
+      console.error('SSL/Network error during upload:', sslError);
+      uploadError = { message: 'SSL connection failed' };
+    }
+
+    // Clean up temporary file
     fs.unlinkSync(file.filepath);
+
+    // If upload failed due to SSL, continue with processing but log the issue
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      console.log('Continuing without storage due to SSL issues');
+    }
 
     // Simulate OCR processing
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -51,11 +96,15 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       ocrResults: ocrResults,
+      fileUrl: uploadData?.path || null,
       metadata: {
         filename: file.originalFilename,
         size: file.size,
         processingTime: Date.now(),
-        confidence: 91
+        confidence: 91,
+        storagePath: uploadData?.path || null,
+        storageStatus: uploadError ? 'failed' : 'success',
+        storageError: uploadError?.message || null
       }
     });
 
