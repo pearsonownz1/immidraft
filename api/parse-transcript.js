@@ -72,8 +72,8 @@ function extractStudentInfo(fullText, ocrResults) {
     /([A-Z][a-z]+\s+[A-Z][a-z]+)/
   ];
 
-  let firstName = 'Student';
-  let lastName = 'Test';
+  let firstName = null;
+  let lastName = null;
 
   for (const pattern of namePatterns) {
     const match = fullText.match(pattern);
@@ -82,11 +82,11 @@ function extractStudentInfo(fullText, ocrResults) {
       if (fullName.includes(',')) {
         const parts = fullName.split(',').map(p => p.trim());
         lastName = parts[0];
-        firstName = parts[1] || firstName;
+        firstName = parts[1] || null;
       } else {
         const parts = fullName.split(' ').map(p => p.trim());
-        firstName = parts[0] || firstName;
-        lastName = parts[1] || lastName;
+        firstName = parts[0] || null;
+        lastName = parts[1] || null;
       }
       break;
     }
@@ -94,7 +94,7 @@ function extractStudentInfo(fullText, ocrResults) {
 
   // Look for student ID
   const idMatch = fullText.match(/(?:Student\s*ID|ID|Student\s*Number):\s*([A-Z0-9]+)/i);
-  const studentId = idMatch ? idMatch[1] : generateStudentId();
+  const studentId = idMatch ? idMatch[1] : null;
 
   // Look for date of birth
   const dobMatch = fullText.match(/(?:Date\s*of\s*Birth|DOB|Born):\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
@@ -117,24 +117,13 @@ function extractInstitutionInfo(fullText, ocrResults) {
     /([A-Za-z\s]+)\s+Institute/i
   ];
 
-  let institutionName = 'Academic Institution';
+  let institutionName = null;
 
   for (const pattern of institutionPatterns) {
     const match = fullText.match(pattern);
     if (match) {
       institutionName = match[0].trim();
       break;
-    }
-  }
-
-  // If no institution found, use a generic name based on content
-  if (institutionName === 'Academic Institution') {
-    if (fullText.toLowerCase().includes('computer science')) {
-      institutionName = 'University of Technology';
-    } else if (fullText.toLowerCase().includes('engineering')) {
-      institutionName = 'Engineering Institute';
-    } else if (fullText.toLowerCase().includes('business')) {
-      institutionName = 'Business College';
     }
   }
 
@@ -155,8 +144,8 @@ function extractAcademicInfo(fullText, ocrResults) {
     /Major:\s*([A-Za-z\s]+)/i
   ];
 
-  let degreeName = 'Bachelor of Science';
-  let major = 'Computer Science';
+  let degreeName = null;
+  let major = null;
 
   for (const pattern of degreePatterns) {
     const match = fullText.match(pattern);
@@ -184,7 +173,7 @@ function extractAcademicInfo(fullText, ocrResults) {
 
   return {
     degreeName,
-    degreeLevel: degreeName.toLowerCase().includes('master') ? 'Master' : 'Bachelor',
+    degreeLevel: degreeName && degreeName.toLowerCase().includes('master') ? 'Master' : degreeName && degreeName.toLowerCase().includes('bachelor') ? 'Bachelor' : null,
     major,
     gpa,
     graduationDate,
@@ -227,42 +216,7 @@ function extractCourses(ocrResults) {
 }
 
 function generateSampleCourses(fullText) {
-  const courses = [];
-  const isCS = fullText.toLowerCase().includes('computer') || fullText.toLowerCase().includes('programming');
-  const isEng = fullText.toLowerCase().includes('engineering');
-  const isBusiness = fullText.toLowerCase().includes('business');
-
-  if (isCS) {
-    courses.push(
-      { courseCode: 'CS101', courseName: 'Introduction to Programming', credits: 3, grade: 'A', semester: 'Fall', year: 2023 },
-      { courseCode: 'CS201', courseName: 'Data Structures', credits: 3, grade: 'A-', semester: 'Spring', year: 2024 },
-      { courseCode: 'MATH201', courseName: 'Calculus I', credits: 4, grade: 'B+', semester: 'Fall', year: 2023 }
-    );
-  } else if (isEng) {
-    courses.push(
-      { courseCode: 'ENG101', courseName: 'Engineering Fundamentals', credits: 3, grade: 'A', semester: 'Fall', year: 2023 },
-      { courseCode: 'MATH201', courseName: 'Calculus I', credits: 4, grade: 'A-', semester: 'Fall', year: 2023 },
-      { courseCode: 'PHYS201', courseName: 'Physics I', credits: 4, grade: 'B+', semester: 'Spring', year: 2024 }
-    );
-  } else if (isBusiness) {
-    courses.push(
-      { courseCode: 'BUS101', courseName: 'Introduction to Business', credits: 3, grade: 'A', semester: 'Fall', year: 2023 },
-      { courseCode: 'ECON201', courseName: 'Microeconomics', credits: 3, grade: 'A-', semester: 'Spring', year: 2024 },
-      { courseCode: 'ACCT101', courseName: 'Financial Accounting', credits: 3, grade: 'B+', semester: 'Fall', year: 2023 }
-    );
-  } else {
-    courses.push(
-      { courseCode: 'GEN101', courseName: 'General Studies', credits: 3, grade: 'A', semester: 'Fall', year: 2023 },
-      { courseCode: 'ENG101', courseName: 'English Composition', credits: 3, grade: 'A-', semester: 'Fall', year: 2023 },
-      { courseCode: 'MATH101', courseName: 'College Mathematics', credits: 3, grade: 'B+', semester: 'Spring', year: 2024 }
-    );
-  }
-
-  return courses;
-}
-
-function generateStudentId() {
-  const year = new Date().getFullYear();
-  const randomNum = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
-  return `${year}${randomNum}`;
+  // Don't generate fake courses - return empty array if no real courses found
+  console.log('No courses could be extracted from the document text');
+  return [];
 }

@@ -1,8 +1,12 @@
+const formidable = require('formidable');
+const fs = require('fs');
+const path = require('path');
+
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, multipart/form-data');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -13,48 +17,50 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('OCR API called successfully');
+    console.log('Starting real OCR processing...');
     
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Parse the multipart form data
+    const form = formidable({
+      uploadDir: '/tmp',
+      keepExtensions: true,
+      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+    });
+
+    const [fields, files] = await form.parse(req);
+    const uploadedFile = files.document?.[0];
+
+    if (!uploadedFile) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No document file provided' 
+      });
+    }
+
+    console.log('Processing file:', uploadedFile.originalFilename);
+    console.log('File path:', uploadedFile.filepath);
+    console.log('File size:', uploadedFile.size);
+
+    // Read the file buffer
+    const fileBuffer = fs.readFileSync(uploadedFile.filepath);
     
-    // Generate realistic OCR results based on uploaded file
-    const ocrResults = [
-      { text: "CHESICC Academic Transcript", confidence: 96, bbox: [100, 30, 500, 60], type: 'header' },
-      { text: "Student Information", confidence: 94, bbox: [50, 100, 250, 130], type: 'header' },
-      { text: "Name: Chen, Wei Ming", confidence: 93, bbox: [50, 150, 300, 170], type: 'text' },
-      { text: "Student ID: 2018001234", confidence: 92, bbox: [50, 180, 250, 200], type: 'text' },
-      { text: "Date of Birth: 15/03/2000", confidence: 90, bbox: [50, 210, 220, 230], type: 'text' },
-      { text: "Program: Computer Science", confidence: 91, bbox: [50, 240, 280, 260], type: 'text' },
-      { text: "Academic Record", confidence: 95, bbox: [50, 300, 200, 330], type: 'header' },
-      { text: "Course Code", confidence: 94, bbox: [50, 360, 150, 380], type: 'cell' },
-      { text: "Course Title", confidence: 93, bbox: [160, 360, 350, 380], type: 'cell' },
-      { text: "Credits", confidence: 92, bbox: [360, 360, 420, 380], type: 'cell' },
-      { text: "Grade", confidence: 94, bbox: [430, 360, 480, 380], type: 'cell' },
-      { text: "CS101", confidence: 89, bbox: [50, 390, 150, 410], type: 'cell' },
-      { text: "Introduction to Programming", confidence: 87, bbox: [160, 390, 350, 410], type: 'cell' },
-      { text: "3", confidence: 91, bbox: [360, 390, 420, 410], type: 'cell' },
-      { text: "A", confidence: 95, bbox: [430, 390, 480, 410], type: 'cell' },
-      { text: "MATH201", confidence: 88, bbox: [50, 420, 150, 440], type: 'cell' },
-      { text: "Calculus I", confidence: 86, bbox: [160, 420, 350, 440], type: 'cell' },
-      { text: "4", confidence: 90, bbox: [360, 420, 420, 440], type: 'cell' },
-      { text: "A-", confidence: 93, bbox: [430, 420, 480, 440], type: 'cell' },
-      { text: "ENG102", confidence: 87, bbox: [50, 450, 150, 470], type: 'cell' },
-      { text: "Academic English", confidence: 85, bbox: [160, 450, 350, 470], type: 'cell' },
-      { text: "3", confidence: 89, bbox: [360, 450, 420, 470], type: 'cell' },
-      { text: "B+", confidence: 92, bbox: [430, 450, 480, 470], type: 'cell' },
-      { text: "Overall GPA: 3.67", confidence: 94, bbox: [50, 520, 200, 540], type: 'text' },
-      { text: "Total Credits: 45", confidence: 93, bbox: [50, 550, 180, 570], type: 'text' }
-    ];
+    // Process the document with real OCR
+    const ocrResults = await processDocumentWithOCR(fileBuffer, uploadedFile.originalFilename);
+
+    // Clean up the temporary file
+    try {
+      fs.unlinkSync(uploadedFile.filepath);
+    } catch (cleanupError) {
+      console.warn('Failed to clean up temp file:', cleanupError);
+    }
 
     return res.status(200).json({
       success: true,
-      ocrResults: ocrResults,
+      message: 'OCR processing completed',
+      ocrResults,
       metadata: {
-        filename: 'CHESICC_2018_(1).pdf',
-        size: 4910000,
+        filename: uploadedFile.originalFilename,
+        size: uploadedFile.size,
         processingTime: Date.now(),
-        confidence: 91,
         totalElements: ocrResults.length,
         documentType: 'academic_transcript'
       }
@@ -62,9 +68,65 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('OCR processing error:', error);
-    return res.status(500).json({ 
-      error: 'OCR processing failed',
-      details: error.message || 'Unknown error'
+    return res.status(500).json({
+      success: false,
+      error: 'OCR processing failed: ' + error.message
     });
   }
 }
+
+async function processDocumentWithOCR(fileBuffer, filename) {
+  try {
+    // For now, we'll use a simple text extraction approach
+    // In production, you would integrate with services like:
+    // - Google Cloud Document AI
+    // - AWS Textract
+    // - Azure Form Recognizer
+    // - Tesseract.js for client-side OCR
+    
+    console.log('Processing document with real OCR...');
+    
+    // Check if it's a PDF
+    if (filename.toLowerCase().endsWith('.pdf')) {
+      return await processPDF(fileBuffer);
+    }
+    
+    // Check if it's an image
+    if (filename.toLowerCase().match(/\.(jpg|jpeg|png|gif|bmp|tiff)$/)) {
+      return await processImage(fileBuffer);
+    }
+    
+    throw new Error('Unsupported file format. Please upload a PDF or image file.');
+    
+  } catch (error) {
+    console.error('OCR processing failed:', error);
+    throw error;
+  }
+}
+
+async function processPDF(fileBuffer) {
+  try {
+    // For PDF processing, we would typically use pdf-parse or similar
+    // For now, return an error indicating real OCR is needed
+    throw new Error('PDF OCR processing requires external service integration. Please integrate with Google Cloud Document AI, AWS Textract, or similar service.');
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function processImage(fileBuffer) {
+  try {
+    // For image processing, we would typically use Tesseract.js or cloud services
+    // For now, return an error indicating real OCR is needed
+    throw new Error('Image OCR processing requires external service integration. Please integrate with Google Cloud Vision API, AWS Textract, or Tesseract.js.');
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Disable body parser for multipart form data
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
