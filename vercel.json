@@ -12,6 +12,10 @@
       "destination": "/api/process-document.js"
     },
     {
+      "source": "/api/ocr/process",
+      "destination": "/api/ocr-process.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
