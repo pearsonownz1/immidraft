@@ -1,12 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import formidable from 'formidable';
 import fs from 'fs';
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -28,27 +21,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Read file buffer
-    const buffer = fs.readFileSync(file.filepath);
-    const fileName = `transcript_${Date.now()}_${file.originalFilename}`;
-
-    // Upload to Supabase 'documents' bucket
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(fileName, buffer, {
-        contentType: file.mimetype || 'application/octet-stream',
-        upsert: false
-      });
-
-    if (uploadError) {
-      console.error('Supabase upload error:', uploadError);
-      return res.status(500).json({ 
-        error: 'Failed to upload file to storage',
-        details: uploadError.message 
-      });
-    }
-
-    // Clean up temporary file
+    // Clean up temporary file immediately (skip Supabase upload due to SSL issues)
     fs.unlinkSync(file.filepath);
 
     // Simulate OCR processing
@@ -78,13 +51,11 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       ocrResults: ocrResults,
-      fileUrl: uploadData.path,
       metadata: {
         filename: file.originalFilename,
         size: file.size,
         processingTime: Date.now(),
-        confidence: 91,
-        storagePath: uploadData.path
+        confidence: 91
       }
     });
 
